@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="170" viewBox="0 0 720 170" fill="none">
+  <defs>
+    <filter id="softGlow" x="-30" y="-30" width="780" height="230" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+      <feGaussianBlur stdDeviation="8" result="effect1_foregroundBlur"/>
+    </filter>
+  </defs>
+  <g filter="url(#softGlow)">
+    <rect x="6" y="20" width="124" height="124" rx="30" fill="#09110D" stroke="#2C3D35"/>
+    <path d="M64 52H48C39.1634 52 32 59.1634 32 68V96C32 104.837 39.1634 112 48 112H68V97H50C45.5817 97 42 93.4183 42 89V75C42 70.5817 45.5817 67 50 67H64V52Z" fill="#D9FFE9"/>
+    <path d="M108 76H88V91H96C96 95.4183 92.4183 99 88 99H76C71.5817 99 68 95.4183 68 91V75C68 70.5817 71.5817 67 76 67H108V52H74C65.1634 52 58 59.1634 58 68V96C58 104.837 65.1634 112 74 112H92C100.837 112 108 104.837 108 96V76Z" fill="#66F2B2"/>
+    <text x="164" y="82" fill="#F8FAFC" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="700" letter-spacing="6">GOOD GAINS</text>
+    <text x="164" y="124" fill="#69F0B4" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" letter-spacing="7">INDICATORS</text>
+  </g>
+</svg>

@@ -1,0 +1,290 @@
+[
+  {
+    "license_key": "GGI-43EB-319C-4747-AD23-07DB",
+    "customer_email": "sb-tpyy850727044@personal.example.com",
+    "product_id": "gg-rr-trade-panel",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T14:04:02.396Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-F6BB-0789-0F0F-792F-52A3",
+    "customer_email": "sb-tpyy850727044@personal.example.com",
+    "product_id": "daily-account-lock-addon",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T14:06:16.159Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-3F0B-1D57-22C6-EE13-8468",
+    "customer_email": "sb-tpyy850727044@personal.example.com",
+    "product_id": null,
+    "bundle_id": "good-gains-trading-toolkit",
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T14:07:23.012Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-D0DC-FAD8-E41E-78E0-599A",
+    "customer_email": "sb-tpyy850727044@personal.example.com",
+    "product_id": "gg-stochastic-momentum-index",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T14:20:28.217Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-E82E-1851-F4C1-9CC5-28FB",
+    "customer_email": "sb-tpyy850727044@personal.example.com",
+    "product_id": "daily-account-lock-addon",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T14:21:30.349Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-FCC3-F069-18DA-A5A0-2EB5",
+    "customer_email": "coupon-test@example.com",
+    "product_id": null,
+    "bundle_id": "good-gains-trading-toolkit",
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T16:00:22.441Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-10C0-9C50-8AC7-9AF4-971E",
+    "customer_email": "sadrinaguy@gmail.com",
+    "product_id": null,
+    "bundle_id": "good-gains-trading-toolkit",
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T16:01:39.389Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-9034-05DF-A042-DE6A-5454",
+    "customer_email": "sadrinaguy@gmail.com",
+    "product_id": null,
+    "bundle_id": "good-gains-trading-toolkit",
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T16:26:34.406Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-3D47-EDC0-E536-5BBE-514A",
+    "customer_email": "sadrinaguy@gmail.com",
+    "product_id": "gg-rr-trade-panel",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T16:28:57.329Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-94BF-DEE8-7CE9-A9FB-07A9",
+    "customer_email": "sadrinaguy@gmail.com",
+    "product_id": "daily-account-lock-addon",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T16:31:14.619Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-A1C3-40F3-4D92-20E3-C5C8",
+    "customer_email": "sadrinaguy@gmail.com",
+    "product_id": "gg-stochastic-momentum-index",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T16:35:01.199Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-479D-016F-F881-AF99-2843",
+    "customer_email": "adjust license key size and balance on download page.  ---  1. reduce license key font size slightly - it is currently too large and dominates the page - make it readable but not the main visual element  ---  2. improve layout balance - keep license in a clean card - ensure it does not overpower the success message  ---  3. keep usability - keep \"copy license key\" button - keep good spacing  ---  4. maintain emphasis, but subtle - slight highlight is ok - no strong glow or oversized text  ---  goal: license key should feel important, but not overpower the page layout.",
+    "product_id": "gg-rr-trade-panel",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T16:37:53.016Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-6F09-1E3A-0FE8-0C2E-E92F",
+    "customer_email": "aaaa",
+    "product_id": "daily-account-lock-addon",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T16:38:29.850Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-B62C-7F93-61E8-B431-B7FA",
+    "customer_email": "aa",
+    "product_id": "session-high-low-indicator",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T16:39:15.743Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-B268-FCD9-9FD4-B9DC-B90C",
+    "customer_email": "aaa",
+    "product_id": null,
+    "bundle_id": "good-gains-trading-toolkit",
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T16:39:28.214Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-DFFA-AE65-129C-A7B9-2883",
+    "customer_email": "aa",
+    "product_id": null,
+    "bundle_id": "good-gains-trading-toolkit",
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T16:42:57.376Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-0864-8FDC-0FDC-9E05-19E6",
+    "customer_email": "a",
+    "product_id": "gg-rr-trade-panel",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T16:43:58.699Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-ED06-0F59-9C6D-8283-4544",
+    "customer_email": "a",
+    "product_id": "daily-account-lock-addon",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T16:48:04.762Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-182A-81E5-69DB-8BC7-9CB4",
+    "customer_email": "sadrinaguy@gmail.com",
+    "product_id": "daily-account-lock-addon",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T16:57:21.119Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-50A8-5EE5-21B5-DE93-68D4",
+    "customer_email": "sadrinaguy@gmail.com",
+    "product_id": null,
+    "bundle_id": "good-gains-trading-toolkit",
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T17:03:22.945Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-13FE-3158-395C-F10A-538C",
+    "customer_email": "freecoupon-test@example.com",
+    "product_id": null,
+    "bundle_id": "good-gains-trading-toolkit",
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T17:05:47.207Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-A014-02D7-34E5-D541-6A93",
+    "customer_email": "sadrinaguy@gmail.com",
+    "product_id": null,
+    "bundle_id": "good-gains-trading-toolkit",
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T17:09:30.361Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-E99F-4446-532A-E3C8-1AE7",
+    "customer_email": "sadrinaguy@gmail.com",
+    "product_id": "daily-account-lock-addon",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T17:42:40.188Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-C393-2970-B918-F23E-97D0",
+    "customer_email": "unlock-test@example.com",
+    "product_id": null,
+    "bundle_id": "good-gains-trading-toolkit",
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T17:46:53.448Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-45BA-2807-50D0-8031-A6E8",
+    "customer_email": "sadrinaguy@gmail.com",
+    "product_id": "gg-rr-trade-panel",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T18:07:20.435Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-D11C-7D01-50CA-D396-E41F",
+    "customer_email": "goodgainsindicators@gmail.com",
+    "product_id": "gg-rr-trade-panel",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-26T18:22:46.260Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-389C-EF11-7BD6-CB85-A342",
+    "customer_email": "sadrinaguy@gmail.com",
+    "product_id": "gg-stochastic-momentum-index",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-27T12:16:28.675Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-B253-CE1E-8D23-BF78-AE8E",
+    "customer_email": "sadrinaguy@gmail.com",
+    "product_id": "gg-stochastic-momentum-index",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-27T12:16:49.260Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-DA0A-7A6F-AC23-A160-9566",
+    "customer_email": "sadrinaguy@gmail.com",
+    "product_id": "gg-stochastic-momentum-index",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-27T15:41:53.300Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-B019-6725-8CAB-A4E8-2FBA",
+    "customer_email": "goodgainsindicators@gmail.com",
+    "product_id": "gg-stochastic-momentum-index",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-27T16:00:26.568Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-D059-CF2B-3A8A-BFE3-8C7A",
+    "customer_email": "sadrinaguy@gmail.com",
+    "product_id": "gg-stochastic-momentum-index",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-27T16:17:39.063Z",
+    "status": "active"
+  },
+  {
+    "license_key": "GGI-TEST-1234",
+    "customer_email": "test@example.com",
+    "product_id": "gg-stochastic-momentum-index",
+    "bundle_id": null,
+    "payment_status": "COMPLETED",
+    "created_at": "2026-04-27T00:00:00.000Z",
+    "status": "active"
+  }
+]

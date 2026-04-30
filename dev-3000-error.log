@@ -1,0 +1,492 @@
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+⨯ The requested resource isn't a valid image for /images/gg-rr-trade-panel-3.png received null
+⨯ The requested resource isn't a valid image for /images/gg-rr-trade-panel-1.png received null
+⨯ The requested resource isn't a valid image for /images/gg-rr-trade-panel-2.png received null
+⨯ The requested resource isn't a valid image for /images/gg-rr-trade-panel-main.png received null
+⨯ ./src/components/ProductDetail.tsx
+Reading source code for parsing failed
+An unexpected error happened while trying to read the source code to parse: failed to convert rope into string
+
+Caused by:
+- invalid utf-8 sequence of 1 bytes from index 2188
+
+Import trace:
+  Server Component:
+    ./src/components/ProductDetail.tsx
+    ./src/app/products/[slug]/page.tsx
+
+
+⨯ ./src/components/ProductDetail.tsx
+Reading source code for parsing failed
+An unexpected error happened while trying to read the source code to parse: failed to convert rope into string
+
+Caused by:
+- invalid utf-8 sequence of 1 bytes from index 2188
+
+Import trace:
+  Server Component:
+    ./src/components/ProductDetail.tsx
+    ./src/app/products/[slug]/page.tsx
+
+
+[browser] ./src/components/ProductDetail.tsx
+Reading source code for parsing failed
+An unexpected error happened while trying to read the source code to parse: failed to convert rope into string
+
+Caused by:
+- invalid utf-8 sequence of 1 bytes from index 2188
+
+Import trace:
+  Server Component:
+    ./src/components/ProductDetail.tsx
+    ./src/app/products/[slug]/page.tsx 
+[browser] ./src/components/ProductDetail.tsx
+Reading source code for parsing failed
+An unexpected error happened while trying to read the source code to parse: failed to convert rope into string
+
+Caused by:
+- invalid utf-8 sequence of 1 bytes from index 2188
+
+Import trace:
+  Server Component:
+    ./src/components/ProductDetail.tsx
+    ./src/app/products/[slug]/page.tsx 
+[browser] Uncaught Error: ./src/components/ProductDetail.tsx
+Reading source code for parsing failed
+An unexpected error happened while trying to read the source code to parse: failed to convert rope into string
+
+Caused by:
+- invalid utf-8 sequence of 1 bytes from index 2188
+
+Import trace:
+  Server Component:
+    ./src/components/ProductDetail.tsx
+    ./src/app/products/[slug]/page.tsx
+
+
+[browser] ./src/components/ProductDetail.tsx
+Reading source code for parsing failed
+An unexpected error happened while trying to read the source code to parse: failed to convert rope into string
+
+Caused by:
+- invalid utf-8 sequence of 1 bytes from index 2188
+
+Import trace:
+  Server Component:
+    ./src/components/ProductDetail.tsx
+    ./src/app/products/[slug]/page.tsx 
+⨯ ./src/components/ProductDetail.tsx
+Reading source code for parsing failed
+An unexpected error happened while trying to read the source code to parse: failed to convert rope into string
+
+Caused by:
+- invalid utf-8 sequence of 1 bytes from index 2188
+
+Import trace:
+  Server Component:
+    ./src/components/ProductDetail.tsx
+    ./src/app/products/[slug]/page.tsx
+
+
+⨯ ./src/components/ProductDetail.tsx
+Reading source code for parsing failed
+An unexpected error happened while trying to read the source code to parse: failed to convert rope into string
+
+Caused by:
+- invalid utf-8 sequence of 1 bytes from index 2188
+
+Import trace:
+  Server Component:
+    ./src/components/ProductDetail.tsx
+    ./src/app/products/[slug]/page.tsx
+
+
+[browser] ./src/components/ProductDetail.tsx
+Reading source code for parsing failed
+An unexpected error happened while trying to read the source code to parse: failed to convert rope into string
+
+Caused by:
+- invalid utf-8 sequence of 1 bytes from index 2188
+
+Import trace:
+  Server Component:
+    ./src/components/ProductDetail.tsx
+    ./src/app/products/[slug]/page.tsx 
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+⨯ ./src/components/ProductCard.tsx:38:11
+Expected '</', got ':'
+  [90m36 |[0m             [33mBuy[0m [33mNow[0m
+  [90m37 |[0m           </[33mLink[0m>
+[31m[1m>[0m [90m38 |[0m         ) : [36mnull[0m}
+  [90m   |[0m           [31m[1m^[0m
+  [90m39 |[0m       </div>
+  [90m40 |[0m
+  [90m41 |[0m       <ul className=[32m"mb-6 space-y-3 text-sm text-zinc-300"[0m>
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx
+
+
+⨯ ./src/components/ProductCard.tsx:38:11
+Expected '</', got ':'
+  [90m36 |[0m             [33mBuy[0m [33mNow[0m
+  [90m37 |[0m           </[33mLink[0m>
+[31m[1m>[0m [90m38 |[0m         ) : [36mnull[0m}
+  [90m   |[0m           [31m[1m^[0m
+  [90m39 |[0m       </div>
+  [90m40 |[0m
+  [90m41 |[0m       <ul className=[32m"mb-6 space-y-3 text-sm text-zinc-300"[0m>
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx
+
+
+⨯ ./src/components/ProductCard.tsx:38:11
+Expected '</', got ':'
+  [90m36 |[0m             [33mBuy[0m [33mNow[0m
+  [90m37 |[0m           </[33mLink[0m>
+[31m[1m>[0m [90m38 |[0m         ) : [36mnull[0m}
+  [90m   |[0m           [31m[1m^[0m
+  [90m39 |[0m       </div>
+  [90m40 |[0m
+  [90m41 |[0m       <ul className=[32m"mb-6 space-y-3 text-sm text-zinc-300"[0m>
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx
+
+
+[browser] Uncaught Error: ./src/components/ProductCard.tsx:38:11
+Expected '</', got ':'
+  36 |             Buy Now
+  37 |           </Link>
+> 38 |         ) : null}
+     |           ^
+  39 |       </div>
+  40 |
+  41 |       <ul className="mb-6 space-y-3 text-sm text-zinc-300">
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx
+
+
+    at <unknown> (Error: ./src/components/ProductCard.tsx:38:11)
+    at <unknown> (Error: (./src/components/ProductCard.tsx:38:11)
+[browser] ./src/components/ProductCard.tsx:38:11
+Expected '</', got ':'
+  36 |             Buy Now
+  37 |           </Link>
+> 38 |         ) : null}
+     |           ^
+  39 |       </div>
+  40 |
+  41 |       <ul className="mb-6 space-y-3 text-sm text-zinc-300">
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx 
+[browser] ./src/components/ProductCard.tsx:38:11
+Expected '</', got ':'
+  36 |             Buy Now
+  37 |           </Link>
+> 38 |         ) : null}
+     |           ^
+  39 |       </div>
+  40 |
+  41 |       <ul className="mb-6 space-y-3 text-sm text-zinc-300">
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/products/page.tsx 
+[browser] ./src/components/ProductCard.tsx:38:11
+Expected '</', got ':'
+  36 |             Buy Now
+  37 |           </Link>
+> 38 |         ) : null}
+     |           ^
+  39 |       </div>
+  40 |
+  41 |       <ul className="mb-6 space-y-3 text-sm text-zinc-300">
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx 
+[browser] ./src/components/ProductCard.tsx:37:11
+Expected '</', got ':'
+  35 |             Buy Now
+  36 |           </Link>
+> 37 |         ) : null}
+     |           ^
+  38 |       </div>
+  39 |
+  40 |       <ul className="mb-6 space-y-3 text-sm text-zinc-300">
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx 
+⨯ ./src/components/ProductCard.tsx:37:11
+Expected '</', got ':'
+  [90m35 |[0m             [33mBuy[0m [33mNow[0m
+  [90m36 |[0m           </[33mLink[0m>
+[31m[1m>[0m [90m37 |[0m         ) : [36mnull[0m}
+  [90m   |[0m           [31m[1m^[0m
+  [90m38 |[0m       </div>
+  [90m39 |[0m
+  [90m40 |[0m       <ul className=[32m"mb-6 space-y-3 text-sm text-zinc-300"[0m>
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx
+
+
+[browser] Uncaught Error: ./src/components/ProductCard.tsx:37:11
+Expected '</', got ':'
+  35 |             Buy Now
+  36 |           </Link>
+> 37 |         ) : null}
+     |           ^
+  38 |       </div>
+  39 |
+  40 |       <ul className="mb-6 space-y-3 text-sm text-zinc-300">
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx
+
+
+    at <unknown> (Error: ./src/components/ProductCard.tsx:37:11)
+    at <unknown> (Error: (./src/components/ProductCard.tsx:37:11)
+[browser] ./src/components/ProductCard.tsx:37:11
+Expected '</', got ':'
+  35 |             Buy Now
+  36 |           </Link>
+> 37 |         ) : null}
+     |           ^
+  38 |       </div>
+  39 |
+  40 |       <ul className="mb-6 space-y-3 text-sm text-zinc-300">
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx 
+[browser] ./src/components/ProductCard.tsx:37:11
+Expected '</', got ':'
+  35 |             Buy Now
+  36 |           </Link>
+> 37 |         ) : null}
+     |           ^
+  38 |       </div>
+  39 |
+  40 |       <ul className="mb-6 space-y-3 text-sm text-zinc-300">
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/products/page.tsx 
+[browser] ./src/components/ProductCard.tsx:37:11
+Expected '</', got ':'
+  35 |             Buy Now
+  36 |           </Link>
+> 37 |         ) : null}
+     |           ^
+  38 |       </div>
+  39 |
+  40 |       <ul className="mb-6 space-y-3 text-sm text-zinc-300">
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx 
+⨯ ./src/components/ProductCard.tsx:37:11
+Expected '</', got ':'
+  [90m35 |[0m             [33mBuy[0m [33mNow[0m
+  [90m36 |[0m           </[33mLink[0m>
+[31m[1m>[0m [90m37 |[0m         ) : [36mnull[0m}
+  [90m   |[0m           [31m[1m^[0m
+  [90m38 |[0m       </div>
+  [90m39 |[0m
+  [90m40 |[0m       <ul className=[32m"mb-6 space-y-3 text-sm text-zinc-300"[0m>
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx
+
+
+[browser] ./src/components/ProductCard.tsx:37:11
+Expected '</', got ':'
+  35 |             Buy Now
+  36 |           </Link>
+> 37 |         ) : null}
+     |           ^
+  38 |       </div>
+  39 |
+  40 |       <ul className="mb-6 space-y-3 text-sm text-zinc-300">
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx 
+⨯ ./src/components/ProductCard.tsx:37:11
+Expected '</', got ':'
+  [90m35 |[0m             [33mBuy[0m [33mNow[0m
+  [90m36 |[0m           </[33mLink[0m>
+[31m[1m>[0m [90m37 |[0m         ) : [36mnull[0m}
+  [90m   |[0m           [31m[1m^[0m
+  [90m38 |[0m       </div>
+  [90m39 |[0m
+  [90m40 |[0m       <ul className=[32m"mb-6 space-y-3 text-sm text-zinc-300"[0m>
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx
+
+
+[browser] Uncaught Error: ./src/components/ProductCard.tsx:37:11
+Expected '</', got ':'
+  35 |             Buy Now
+  36 |           </Link>
+> 37 |         ) : null}
+     |           ^
+  38 |       </div>
+  39 |
+  40 |       <ul className="mb-6 space-y-3 text-sm text-zinc-300">
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx
+
+
+    at <unknown> (Error: ./src/components/ProductCard.tsx:37:11)
+    at <unknown> (Error: (./src/components/ProductCard.tsx:37:11)
+[browser] ./src/components/ProductCard.tsx:37:11
+Expected '</', got ':'
+  35 |             Buy Now
+  36 |           </Link>
+> 37 |         ) : null}
+     |           ^
+  38 |       </div>
+  39 |
+  40 |       <ul className="mb-6 space-y-3 text-sm text-zinc-300">
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx 
+[browser] ./src/components/ProductCard.tsx:37:11
+Expected '</', got ':'
+  35 |             Buy Now
+  36 |           </Link>
+> 37 |         ) : null}
+     |           ^
+  38 |       </div>
+  39 |
+  40 |       <ul className="mb-6 space-y-3 text-sm text-zinc-300">
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/products/page.tsx 
+[browser] ./src/components/ProductCard.tsx:37:11
+Expected '</', got ':'
+  35 |             Buy Now
+  36 |           </Link>
+> 37 |         ) : null}
+     |           ^
+  38 |       </div>
+  39 |
+  40 |       <ul className="mb-6 space-y-3 text-sm text-zinc-300">
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/ProductCard.tsx
+    ./src/app/page.tsx 
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior

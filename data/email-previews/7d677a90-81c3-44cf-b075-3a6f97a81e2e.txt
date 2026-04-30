@@ -1,0 +1,11 @@
+TO: demo@goodgainsindicators.com
+SUBJECT: GG RR Trade Panel download and license key
+
+Product: GG RR Trade Panel
+License key: GGI-CA42-7867-23AE-A040-414C
+Private download page: http://localhost:3000/downloads/04dfe885bb8f236ee2eb0a7baa680e80ade1c5ba3e331977
+
+Short installation instructions:
+- Import the ZIP into NinjaTrader 8 using Tools > Import > NinjaScript Add-On.
+- Open a chart and add the indicator or panel from your NinjaTrader indicator list.
+- Use your license key during activation when the live license flow is enabled.

@@ -1,0 +1,12 @@
+[
+  {
+    "code": "FREE100",
+    "type": "free",
+    "value": 100,
+    "productId": null,
+    "maxUses": 100,
+    "usedCount": 16,
+    "expiresAt": null,
+    "active": true
+  }
+]

@@ -1,0 +1,48 @@
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+⚠ Fast Refresh had to perform a full reload when ./node_modules/next/dist/client/image-component.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+PayPal delivery email failed Error: Resend email failed: {"statusCode":401,"name":"validation_error","message":"API key is invalid"}
+    at sendPurchaseEmail (src\lib\email.ts:145:11)
+    at async GET (src\app\api\paypal\capture\route.ts:58:7)
+  143 |   if (!response.ok) {
+  144 |     const errorText = await response.text();
+> 145 |     throw new Error(`Resend email failed: ${errorText}`);
+      |           ^
+  146 |   }
+  147 |
+  148 |   return { mode: "resend" as const };
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+PayPal delivery email failed Error: Resend email failed: {"statusCode":401,"name":"validation_error","message":"API key is invalid"}
+    at sendPurchaseEmail (src\lib\email.ts:145:11)
+    at async GET (src\app\api\paypal\capture\route.ts:58:7)
+  143 |   if (!response.ok) {
+  144 |     const errorText = await response.text();
+> 145 |     throw new Error(`Resend email failed: ${errorText}`);
+      |           ^
+  146 |   }
+  147 |
+  148 |   return { mode: "resend" as const };
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+⚠ Fast Refresh had to perform a full reload when ./node_modules/next/dist/client/image-component.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+PayPal delivery email failed Error: Resend email failed: {"statusCode":401,"name":"validation_error","message":"API key is invalid"}
+    at sendPurchaseEmail (src\lib\email.ts:145:11)
+    at async GET (src\app\api\paypal\capture\route.ts:60:7)
+  143 |   if (!response.ok) {
+  144 |     const errorText = await response.text();
+> 145 |     throw new Error(`Resend email failed: ${errorText}`);
+      |           ^
+  146 |   }
+  147 |
+  148 |   return { mode: "resend" as const };
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+PayPal delivery email failed Error: Resend email failed: {"statusCode":401,"name":"validation_error","message":"API key is invalid"}
+    at sendPurchaseEmail (src\lib\email.ts:145:11)
+    at async GET (src\app\api\paypal\capture\route.ts:60:7)
+  143 |   if (!response.ok) {
+  144 |     const errorText = await response.text();
+> 145 |     throw new Error(`Resend email failed: ${errorText}`);
+      |           ^
+  146 |   }
+  147 |
+  148 |   return { mode: "resend" as const };
+⚠ Fast Refresh had to perform a full reload when ./node_modules/next/dist/client/image-component.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload

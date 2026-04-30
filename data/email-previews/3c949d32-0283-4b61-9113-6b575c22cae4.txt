@@ -1,0 +1,11 @@
+TO: demo@goodgainsindicators.com
+SUBJECT: GG Daily Account Lock AddOn download and license key
+
+Product: GG Daily Account Lock AddOn
+License key: GGI-8DCA-1B29-2114-B9D0-4370
+Private download page: http://localhost:3000/downloads/7ed0e1ea7c7ed4cd0bf56b5bd718ba547a8451a1ecb7d646
+
+Short installation instructions:
+- Import the ZIP into NinjaTrader 8 using Tools > Import > NinjaScript Add-On.
+- Open the add-on from the NinjaTrader control center after import completes.
+- Apply your license key when prompted by the final activation build.

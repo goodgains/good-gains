@@ -1,0 +1,69 @@
+
+> good-gains-indicators@0.1.0 dev
+> next dev --webpack --hostname 0.0.0.0 --port 3000
+
+▲ Next.js 16.2.4 (webpack)
+- Local:         http://localhost:3000
+- Network:       http://0.0.0.0:3000
+- Environments: .env.local
+✓ Ready in 257ms
+
+ GET / 200 in 797ms (next.js: 570ms, application-code: 227ms)
+ GET / 200 in 85ms (next.js: 3ms, application-code: 82ms)
+ GET /pricing 200 in 284ms (next.js: 254ms, application-code: 31ms)
+ GET /products/gg-stochastic-momentum-index 200 in 1325ms (next.js: 1287ms, generate-params: 911ms, application-code: 39ms)
+ POST /api/coupon/validate 200 in 251ms (next.js: 236ms, application-code: 15ms)
+Free coupon email send attempt {
+  to: 'sadrinaguy@gmail.com',
+  product: 'GG Stochastic Momentum Index (SMI)',
+  licenseKey: 'GGI-389C-EF11-7BD6-CB85-A342'
+}
+Free coupon email sent successfully {
+  provider: 'resend',
+  messageId: 'bc0c9514-590f-49c2-8d2a-78c4a73215de',
+  to: 'sadrinaguy@gmail.com',
+  product: 'GG Stochastic Momentum Index (SMI)',
+  licenseKey: 'GGI-389C-EF11-7BD6-CB85-A342'
+}
+ POST /api/checkout/free 200 in 1418ms (next.js: 236ms, application-code: 1182ms)
+ GET /products/gg-stochastic-momentum-index 200 in 277ms (next.js: 32ms, generate-params: 7ms, application-code: 246ms)
+ GET /downloads/b5dea66b4b9f8d841da8cfa3b12afb82db004a4774845a07 200 in 1040ms (next.js: 911ms, application-code: 130ms)
+ GET /products/gg-stochastic-momentum-index 200 in 101ms (next.js: 11ms, generate-params: 4ms, application-code: 90ms)
+ POST /api/coupon/validate 200 in 21ms (next.js: 8ms, application-code: 13ms)
+Free coupon email send attempt {
+  to: 'sadrinaguy@gmail.com',
+  product: 'GG Stochastic Momentum Index (SMI)',
+  licenseKey: 'GGI-B253-CE1E-8D23-BF78-AE8E'
+}
+ GET /products/gg-stochastic-momentum-index 200 in 104ms (next.js: 9ms, generate-params: 7ms, application-code: 95ms)
+ GET /products/gg-stochastic-momentum-index 200 in 25ms (next.js: 1525µs, generate-params: 18µs, application-code: 23ms)
+Free coupon email sent successfully {
+  provider: 'resend',
+  messageId: '09e92321-dc9e-4d71-9a61-4cc6c765f07e',
+  to: 'sadrinaguy@gmail.com',
+  product: 'GG Stochastic Momentum Index (SMI)',
+  licenseKey: 'GGI-B253-CE1E-8D23-BF78-AE8E'
+}
+ POST /api/checkout/free 200 in 922ms (next.js: 4ms, application-code: 918ms)
+ GET /downloads/7902bdd623a0f5be2b66a78304a7b7e5bc2f6adfb5f46bfd 200 in 65ms (next.js: 7ms, application-code: 57ms)
+ GET / 200 in 71ms (next.js: 13ms, application-code: 58ms)
+ GET /pricing 200 in 33ms (next.js: 10ms, application-code: 23ms)
+ GET /products/gg-stochastic-momentum-index 200 in 28ms (next.js: 7ms, generate-params: 5ms, application-code: 21ms)
+ GET / 200 in 84ms (next.js: 1342µs, application-code: 83ms)
+ GET /pricing 200 in 18ms (next.js: 1903µs, application-code: 16ms)
+ GET / 200 in 38ms (next.js: 2ms, application-code: 36ms)
+ GET / 200 in 7ms (next.js: 1569µs, application-code: 5ms)
+ GET / 200 in 30ms (next.js: 1350µs, application-code: 28ms)
+ GET /products 200 in 411ms (next.js: 382ms, application-code: 29ms)
+ GET / 200 in 47ms (next.js: 8ms, application-code: 39ms)
+ GET / 200 in 154ms (next.js: 2ms, application-code: 152ms)
+ GET / 200 in 92ms (next.js: 1975µs, application-code: 90ms)
+ GET /products 200 in 22ms (next.js: 1884µs, application-code: 20ms)
+ GET /pricing 200 in 24ms (next.js: 8ms, application-code: 16ms)
+ GET / 200 in 49ms (next.js: 3ms, application-code: 46ms)
+ GET /products/session-high-low-indicator 200 in 49ms (next.js: 20ms, generate-params: 10ms, application-code: 28ms)
+ GET /products/gg-stochastic-momentum-index 200 in 30ms (next.js: 6ms, generate-params: 4ms, application-code: 24ms)
+ GET / 200 in 38ms (next.js: 1698µs, application-code: 36ms)
+ GET / 200 in 6ms (next.js: 1747µs, application-code: 5ms)
+ GET / 200 in 40ms (next.js: 1318µs, application-code: 39ms)
+ POST /api/verify-license 200 in 371ms (next.js: 356ms, application-code: 15ms)

@@ -1,0 +1,10 @@
+TO: demo@goodgainsindicators.com
+SUBJECT: Good Gains Trading Toolkit download and license key
+
+Product: Good Gains Trading Toolkit
+License key: GGI-1E72-F719-1385-4230-EF39
+Private download page: http://localhost:3000/downloads/7d1ad5f537f9fb7f15a56f49d9cf1a8ba5e076c068a3a860
+
+Short installation instructions:
+Import each included ZIP into NinjaTrader 8 using Tools > Import > NinjaScript Add-On.
+Open each tool after import and keep your license key available.
