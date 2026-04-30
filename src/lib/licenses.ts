@@ -1,7 +1,7 @@
 ﻿import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { DeliveryRecord } from "@/lib/delivery";
-import { getProductBySlug } from "@/lib/products";
+import { bundle, getProductBySlug, products } from "@/lib/products";
 
 export type LicenseRecord = {
   license_key: string;
@@ -78,7 +78,16 @@ function normalizeValue(value?: string | null) {
 
 function matchesProduct(record: LicenseRecord, requestedProduct: string) {
   if (record.bundle_id === BUNDLE_ID) {
-    return requestedProduct.length > 0;
+    return (
+      products.some((product) => {
+        return (
+          normalizeValue(product.name) === requestedProduct ||
+          normalizeValue(product.slug) === requestedProduct
+        );
+      }) ||
+      normalizeValue(bundle.name) === requestedProduct ||
+      normalizeValue(bundle.slug) === requestedProduct
+    );
   }
 
   if (!record.product_id) {

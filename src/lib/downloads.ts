@@ -33,37 +33,37 @@ export const productDownloads: DownloadRelease[] = [
   {
     slug: "daily-account-lock-addon",
     name: "GG Daily Account Lock AddOn",
-    version: "v1.2.0",
-    fileName: "GG-Daily-Account-Lock-AddOn-v1.2.0.zip",
-    filePath: "/downloads/GG-Daily-Account-Lock-AddOn-v1.2.0.zip",
-    updatedAt: "April 26, 2026",
+    version: "v1.0",
+    fileName: "GG-Daily-Account-Lock-AddOn-v1.0.zip",
+    filePath: "/downloads/GG-Daily-Account-Lock-AddOn-v1.0.zip",
+    updatedAt: "April 30, 2026",
     installNotes: [
       "Import the ZIP into NinjaTrader 8 using Tools > Import > NinjaScript Add-On.",
       "Open the add-on from the NinjaTrader control center after import completes.",
-      "Apply your license key when prompted by the final activation build."
+      "Enter your license key when the activation prompt appears."
     ],
     changelog: [
-      "Added clearer lock status messaging for selected accounts.",
-      "Improved persistence checks after restart to keep daily lock state reliable.",
-      "Polished flatten and cancel flow for faster safety actions."
+      "Added protected license validation before lock and flatten actions run.",
+      "Included the latest account control and locked-status workflow updates.",
+      "Prepared the production ZIP for private delivery and re-download access."
     ]
   },
   {
     slug: "session-high-low-indicator",
     name: "GG Session High/Low Indicator",
-    version: "v1.1.3",
-    fileName: "GG-Session-High-Low-Indicator-v1.1.3.zip",
-    filePath: "/downloads/GG-Session-High-Low-Indicator-v1.1.3.zip",
-    updatedAt: "April 26, 2026",
+    version: "v1.0",
+    fileName: "GG-Session-High-Low-Indicator-v1.0.zip",
+    filePath: "/downloads/GG-Session-High-Low-Indicator-v1.0.zip",
+    updatedAt: "April 30, 2026",
     installNotes: [
       "Import the ZIP into NinjaTrader 8 using Tools > Import > NinjaScript Add-On.",
       "Add the indicator to your chart and configure the session display settings.",
-      "Keep your license key available for the future activation workflow."
+      "Enter your license key when the activation prompt appears."
     ],
     changelog: [
-      "Cleaned up session label spacing for a lighter chart footprint.",
-      "Improved session rendering consistency across intraday templates.",
-      "Small visual tuning for Asia, London, and New York level visibility."
+      "Added protected license validation before session levels render.",
+      "Included the latest session range and market structure display updates.",
+      "Prepared the production ZIP for private delivery and re-download access."
     ]
   },
   {

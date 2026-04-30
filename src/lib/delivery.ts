@@ -3,7 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { syncLicenseRecord } from "@/lib/licenses";
 import { bundle, getProductBySlug, products } from "@/lib/products";
-import { bundleDownload, getReleaseBySlug } from "@/lib/downloads";
+import { getReleaseBySlug } from "@/lib/downloads";
 import { getBaseUrl } from "@/lib/paypal";
 
 export type DeliveryRecord = {
@@ -351,6 +351,6 @@ export function getDeliveryDownloadData(record: DeliveryRecord) {
 
   return {
     releases,
-    bundleRelease: record.purchasedSlugs.length > 1 ? bundleDownload : null
+    hasBundlePurchase: record.purchasedSlugs.length > 1
   };
 }

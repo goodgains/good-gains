@@ -1,4 +1,4 @@
-#region Using declarations
+﻿#region Using declarations
 using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -109,7 +109,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 NewYorkHighBrush = CreateFrozenBrush(Color.FromRgb(248, 113, 113));
                 NewYorkLowBrush = CreateFrozenBrush(Color.FromRgb(251, 146, 60));
                 LicenseKey = string.Empty;
-                UseLocalLicenseServer = true;
+                UseLocalLicenseServer = false;
                 licenseValidated = false;
                 licenseIsValid = false;
                 licenseStatusMessage = string.Empty;
@@ -658,7 +658,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 		private GGSessionHighLow[] cacheGGSessionHighLow;
 		public GGSessionHighLow GGSessionHighLow(string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle)
 		{
-			return GGSessionHighLow(Input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, true);
+			return GGSessionHighLow(Input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, false);
 		}
 
 		public GGSessionHighLow GGSessionHighLow(string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle, string licenseKey, bool useLocalLicenseServer)
@@ -668,7 +668,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 
 		public GGSessionHighLow GGSessionHighLow(ISeries<double> input, string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle)
 		{
-			return GGSessionHighLow(input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, true);
+			return GGSessionHighLow(input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, false);
 		}
 
 		public GGSessionHighLow GGSessionHighLow(ISeries<double> input, string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle, string licenseKey, bool useLocalLicenseServer)
@@ -688,12 +688,12 @@ namespace NinjaTrader.NinjaScript.MarketAnalyzerColumns
 	{
 		public Indicators.GGSessionHighLow GGSessionHighLow(string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle)
 		{
-			return indicator.GGSessionHighLow(Input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, true);
+			return indicator.GGSessionHighLow(Input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, false);
 		}
 
 		public Indicators.GGSessionHighLow GGSessionHighLow(ISeries<double> input , string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle)
 		{
-			return indicator.GGSessionHighLow(input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, true);
+			return indicator.GGSessionHighLow(input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, false);
 		}
 
 		public Indicators.GGSessionHighLow GGSessionHighLow(string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle, string licenseKey, bool useLocalLicenseServer)
@@ -714,12 +714,12 @@ namespace NinjaTrader.NinjaScript.Strategies
 	{
 		public Indicators.GGSessionHighLow GGSessionHighLow(string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle)
 		{
-			return indicator.GGSessionHighLow(Input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, true);
+			return indicator.GGSessionHighLow(Input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, false);
 		}
 
 		public Indicators.GGSessionHighLow GGSessionHighLow(ISeries<double> input , string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle)
 		{
-			return indicator.GGSessionHighLow(input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, true);
+			return indicator.GGSessionHighLow(input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, false);
 		}
 
 		public Indicators.GGSessionHighLow GGSessionHighLow(string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle, string licenseKey, bool useLocalLicenseServer)
@@ -735,3 +735,4 @@ namespace NinjaTrader.NinjaScript.Strategies
 }
 
 #endregion
+

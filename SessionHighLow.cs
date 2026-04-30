@@ -3,6 +3,9 @@ using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
+using System.IO;
+using System.Net;
+using System.Text;
 using System.Windows;
 using System.Windows.Media;
 using System.Xml.Serialization;
@@ -19,17 +22,26 @@ namespace NinjaTrader.NinjaScript.Indicators
 {
     public class GGSessionHighLow : Indicator
     {
-        private const string DefaultAsiaStart = "20:00";
-        private const string DefaultAsiaEnd = "02:30";
-        private const string DefaultLondonStart = "03:00";
-        private const string DefaultLondonEnd = "11:30";
-        private const string DefaultNewYorkStart = "09:30";
-        private const string DefaultNewYorkEnd = "16:00";
+        private const string ProductDisplayName = "GG Session High/Low Indicator";
+        private const string LocalLicenseServerUrl = "http://127.0.0.1:3000/api/verify-license";
+        private const string ProductionLicenseServerUrl = "https://goodgainsindicators.com/api/verify-license";
+        private const int LicenseRequestTimeoutMs = 5000;
+        private const string LicenseWarningTag = "GGSESSIONHIGHLOW_LICENSE_WARNING";
+        private const string DefaultAsiaStart = "01:00";
+        private const string DefaultAsiaEnd = "07:30";
+        private const string DefaultLondonStart = "10:00";
+        private const string DefaultLondonEnd = "18:30";
+        private const string DefaultNewYorkStart = "16:30";
+        private const string DefaultNewYorkEnd = "23:00";
 
-        private DateTime currentTradingDay;
         private SessionState asiaSession;
         private SessionState londonSession;
         private SessionState newYorkSession;
+        private bool licenseValidated;
+        private bool licenseIsValid;
+        private bool lastValidatedUseLocalLicenseServer;
+        private string licenseStatusMessage;
+        private string lastValidatedLicenseKey;
 
         private class SessionState
         {
@@ -47,6 +59,7 @@ namespace NinjaTrader.NinjaScript.Indicators
             public int EndBar { get; set; }
             public double High { get; set; }
             public double Low { get; set; }
+            public DateTime SessionDate { get; set; }
 
             public void Reset()
             {
@@ -55,6 +68,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 EndBar = -1;
                 High = double.MinValue;
                 Low = double.MaxValue;
+                SessionDate = Core.Globals.MinDate;
             }
         }
 
@@ -94,13 +108,19 @@ namespace NinjaTrader.NinjaScript.Indicators
                 LondonLowBrush = CreateFrozenBrush(Color.FromRgb(59, 130, 246));
                 NewYorkHighBrush = CreateFrozenBrush(Color.FromRgb(248, 113, 113));
                 NewYorkLowBrush = CreateFrozenBrush(Color.FromRgb(251, 146, 60));
+                LicenseKey = string.Empty;
+                UseLocalLicenseServer = true;
+                licenseValidated = false;
+                licenseIsValid = false;
+                licenseStatusMessage = string.Empty;
+                lastValidatedLicenseKey = string.Empty;
+                lastValidatedUseLocalLicenseServer = UseLocalLicenseServer;
             }
             else if (State == State.DataLoaded)
             {
                 asiaSession = new SessionState("Asia", "Asia");
                 londonSession = new SessionState("London", "London");
                 newYorkSession = new SessionState("NewYork", "New York");
-                currentTradingDay = Core.Globals.MinDate;
             }
         }
 
@@ -109,31 +129,29 @@ namespace NinjaTrader.NinjaScript.Indicators
             if (CurrentBar < 0 || Bars == null)
                 return;
 
+            ValidateLicenseStatus();
+            if (!licenseIsValid)
+            {
+                ClearSessionDrawingsForLicense();
+                Draw.TextFixed(
+                    this,
+                    LicenseWarningTag,
+                    "Invalid or missing license key for GG Session High/Low Indicator.",
+                    TextPosition.TopLeft,
+                    Brushes.OrangeRed,
+                    new SimpleFont("Segoe UI", 12),
+                    Brushes.Transparent,
+                    Brushes.Transparent,
+                    0);
+                return;
+            }
+
+            RemoveDrawObject(LicenseWarningTag);
+
             if (!IsIntradayChart())
                 return;
 
             DateTime barTime = Time[0];
-            DateTime tradingDay;
-            if (!TryGetActiveTradingDay(barTime, out tradingDay))
-            {
-                if (currentTradingDay != Core.Globals.MinDate)
-                {
-                    RemoveDayDrawObjects(currentTradingDay);
-                    ResetSessionStates();
-                    currentTradingDay = Core.Globals.MinDate;
-                }
-
-                return;
-            }
-
-            if (currentTradingDay != tradingDay)
-            {
-                if (currentTradingDay != Core.Globals.MinDate)
-                    RemoveDayDrawObjects(currentTradingDay);
-
-                ResetSessionStates();
-                currentTradingDay = tradingDay;
-            }
 
             ProcessSession(
                 asiaSession,
@@ -144,8 +162,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 DefaultAsiaEnd,
                 AsiaHighBrush,
                 AsiaLowBrush,
-                barTime,
-                tradingDay);
+                barTime);
 
             ProcessSession(
                 londonSession,
@@ -156,8 +173,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 DefaultLondonEnd,
                 LondonHighBrush,
                 LondonLowBrush,
-                barTime,
-                tradingDay);
+                barTime);
 
             ProcessSession(
                 newYorkSession,
@@ -168,8 +184,122 @@ namespace NinjaTrader.NinjaScript.Indicators
                 DefaultNewYorkEnd,
                 NewYorkHighBrush,
                 NewYorkLowBrush,
-                barTime,
-                tradingDay);
+                barTime);
+        }
+
+        private string NormalizeLicenseKey(string value)
+        {
+            return (value ?? string.Empty).Trim().ToUpperInvariant();
+        }
+
+        private string GetLicenseServerUrl()
+        {
+            return UseLocalLicenseServer ? LocalLicenseServerUrl : ProductionLicenseServerUrl;
+        }
+
+        private string EscapeJsonValue(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return string.Empty;
+
+            return value
+                .Replace("\\", "\\\\")
+                .Replace("\"", "\\\"")
+                .Replace("\r", "\\r")
+                .Replace("\n", "\\n");
+        }
+
+        private void SetLicenseState(bool isValid, string message)
+        {
+            licenseValidated = true;
+            licenseIsValid = isValid;
+            licenseStatusMessage = isValid
+                ? string.Empty
+                : (string.IsNullOrWhiteSpace(message)
+                    ? "Invalid or missing license key for GG Session High/Low Indicator."
+                    : message);
+        }
+
+        private void ValidateLicenseStatus()
+        {
+            string normalizedLicenseKey = NormalizeLicenseKey(LicenseKey);
+
+            if (licenseValidated &&
+                string.Equals(lastValidatedLicenseKey, normalizedLicenseKey, StringComparison.Ordinal) &&
+                lastValidatedUseLocalLicenseServer == UseLocalLicenseServer)
+                return;
+
+            lastValidatedLicenseKey = normalizedLicenseKey;
+            lastValidatedUseLocalLicenseServer = UseLocalLicenseServer;
+
+            if (string.IsNullOrWhiteSpace(normalizedLicenseKey))
+            {
+                SetLicenseState(false, "Invalid or missing license key for GG Session High/Low Indicator.");
+                return;
+            }
+
+            try
+            {
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                string payload = "{\"licenseKey\":\"" + EscapeJsonValue(normalizedLicenseKey) + "\",\"product\":\"" + EscapeJsonValue(ProductDisplayName) + "\"}";
+                byte[] payloadBytes = Encoding.UTF8.GetBytes(payload);
+
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(GetLicenseServerUrl());
+                request.Method = "POST";
+                request.ContentType = "application/json";
+                request.Accept = "application/json";
+                request.Timeout = LicenseRequestTimeoutMs;
+                request.ReadWriteTimeout = LicenseRequestTimeoutMs;
+                request.ContentLength = payloadBytes.Length;
+                request.Proxy = null;
+
+                using (Stream requestStream = request.GetRequestStream())
+                    requestStream.Write(payloadBytes, 0, payloadBytes.Length);
+
+                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                using (Stream responseStream = response.GetResponseStream())
+                using (StreamReader reader = new StreamReader(responseStream))
+                {
+                    string responseText = reader.ReadToEnd();
+                    bool isValid =
+                        responseText.IndexOf("\"valid\":true", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        responseText.IndexOf("\"valid\": true", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                    SetLicenseState(
+                        isValid,
+                        isValid ? string.Empty : "Invalid or missing license key for GG Session High/Low Indicator.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Print(ProductDisplayName + " license validation failed: " + ex.Message);
+                SetLicenseState(false, "Invalid or missing license key for GG Session High/Low Indicator.");
+            }
+        }
+
+        private void ClearSessionDrawingsForLicense()
+        {
+            ClearSessionStateForLicense(asiaSession);
+            ClearSessionStateForLicense(londonSession);
+            ClearSessionStateForLicense(newYorkSession);
+        }
+
+        private void ClearSessionStateForLicense(SessionState state)
+        {
+            if (state == null)
+                return;
+
+            if (state.SessionDate != Core.Globals.MinDate)
+                RemoveSessionDrawObjects(state, state.SessionDate);
+
+            state.Reset();
         }
 
         private void ProcessSession(
@@ -181,25 +311,34 @@ namespace NinjaTrader.NinjaScript.Indicators
             string fallbackEnd,
             Brush highBrush,
             Brush lowBrush,
-            DateTime barTime,
-            DateTime tradingDay)
+            DateTime barTime)
         {
             if (state == null)
                 return;
 
             if (!showSession)
             {
-                RemoveSessionDrawObjects(state, tradingDay);
+                RemoveSessionDrawObjects(state, state.SessionDate);
                 state.Reset();
                 return;
             }
 
             TimeSpan start = ParseTime(startText, fallbackStart);
             TimeSpan end = ParseTime(endText, fallbackEnd);
+            DateTime sessionDate = GetSessionDate(barTime, start, end);
+
+            if (state.SessionDate != sessionDate)
+            {
+                if (state.SessionDate != Core.Globals.MinDate)
+                    RemoveSessionDrawObjects(state, state.SessionDate);
+
+                state.Reset();
+                state.SessionDate = sessionDate;
+            }
 
             DateTime sessionStart;
             DateTime sessionEnd;
-            BuildSessionWindow(tradingDay, start, end, out sessionStart, out sessionEnd);
+            BuildSessionWindow(sessionDate, start, end, out sessionStart, out sessionEnd);
 
             bool inSession = barTime >= sessionStart && barTime <= sessionEnd;
             if (inSession)
@@ -229,8 +368,8 @@ namespace NinjaTrader.NinjaScript.Indicators
             if (barTime > sessionEnd && state.EndBar < 0)
                 return;
 
-            DrawSessionLine(state, tradingDay, true, state.High, highBrush);
-            DrawSessionLine(state, tradingDay, false, state.Low, lowBrush);
+            DrawSessionLine(state, state.SessionDate, true, state.High, highBrush);
+            DrawSessionLine(state, state.SessionDate, false, state.Low, lowBrush);
         }
 
         private void DrawSessionLine(SessionState state, DateTime tradingDay, bool isHigh, double price, Brush brush)
@@ -291,16 +430,6 @@ namespace NinjaTrader.NinjaScript.Indicators
                 newYorkSession.Reset();
         }
 
-        private void RemoveDayDrawObjects(DateTime tradingDay)
-        {
-            if (tradingDay == Core.Globals.MinDate)
-                return;
-
-            RemoveSessionDrawObjects(asiaSession, tradingDay);
-            RemoveSessionDrawObjects(londonSession, tradingDay);
-            RemoveSessionDrawObjects(newYorkSession, tradingDay);
-        }
-
         private void RemoveSessionDrawObjects(SessionState state, DateTime tradingDay)
         {
             if (state == null || tradingDay == Core.Globals.MinDate)
@@ -327,102 +456,27 @@ namespace NinjaTrader.NinjaScript.Indicators
             return GetLineTag(state, tradingDay, isHigh) + "_Label";
         }
 
-        private DateTime GetTradingDay(DateTime time)
+        private DateTime GetSessionDate(DateTime barTime, TimeSpan start, TimeSpan end)
         {
-            TimeSpan rollover = GetTradingDayRollover();
-            return time.TimeOfDay >= rollover
-                ? time.Date.AddDays(1)
-                : time.Date;
+            if (end > start)
+                return barTime.Date;
+
+            return barTime.TimeOfDay >= start
+                ? barTime.Date
+                : barTime.Date.AddDays(-1);
         }
 
-        private bool TryGetActiveTradingDay(DateTime barTime, out DateTime tradingDay)
+        private void BuildSessionWindow(DateTime sessionDate, TimeSpan start, TimeSpan end, out DateTime sessionStart, out DateTime sessionEnd)
         {
-            tradingDay = GetTradingDay(barTime);
+            sessionStart = sessionDate.Date.Add(start);
 
-            DateTime bundleStart;
-            DateTime bundleEnd;
-            BuildTradingDayWindow(tradingDay, out bundleStart, out bundleEnd);
-
-            return barTime >= bundleStart && barTime <= bundleEnd;
-        }
-
-        private void BuildTradingDayWindow(DateTime tradingDay, out DateTime bundleStart, out DateTime bundleEnd)
-        {
-            DateTime asiaStart;
-            DateTime asiaEnd;
-            DateTime londonStart;
-            DateTime londonEnd;
-            DateTime newYorkStart;
-            DateTime newYorkEnd;
-
-            BuildSessionWindow(
-                tradingDay,
-                ParseTime(AsiaStartTime, DefaultAsiaStart),
-                ParseTime(AsiaEndTime, DefaultAsiaEnd),
-                out asiaStart,
-                out asiaEnd);
-
-            BuildSessionWindow(
-                tradingDay,
-                ParseTime(LondonStartTime, DefaultLondonStart),
-                ParseTime(LondonEndTime, DefaultLondonEnd),
-                out londonStart,
-                out londonEnd);
-
-            BuildSessionWindow(
-                tradingDay,
-                ParseTime(NewYorkStartTime, DefaultNewYorkStart),
-                ParseTime(NewYorkEndTime, DefaultNewYorkEnd),
-                out newYorkStart,
-                out newYorkEnd);
-
-            bundleStart = asiaStart;
-            if (londonStart < bundleStart)
-                bundleStart = londonStart;
-            if (newYorkStart < bundleStart)
-                bundleStart = newYorkStart;
-
-            bundleEnd = asiaEnd;
-            if (londonEnd > bundleEnd)
-                bundleEnd = londonEnd;
-            if (newYorkEnd > bundleEnd)
-                bundleEnd = newYorkEnd;
-        }
-
-        private TimeSpan GetTradingDayRollover()
-        {
-            TimeSpan rollover = TimeSpan.Zero;
-            bool hasOvernightSession = false;
-
-            UpdateRollover(ParseTime(AsiaStartTime, DefaultAsiaStart), ParseTime(AsiaEndTime, DefaultAsiaEnd), ref rollover, ref hasOvernightSession);
-            UpdateRollover(ParseTime(LondonStartTime, DefaultLondonStart), ParseTime(LondonEndTime, DefaultLondonEnd), ref rollover, ref hasOvernightSession);
-            UpdateRollover(ParseTime(NewYorkStartTime, DefaultNewYorkStart), ParseTime(NewYorkEndTime, DefaultNewYorkEnd), ref rollover, ref hasOvernightSession);
-
-            return hasOvernightSession ? rollover : TimeSpan.Zero;
-        }
-
-        private void UpdateRollover(TimeSpan start, TimeSpan end, ref TimeSpan rollover, ref bool hasOvernightSession)
-        {
-            if (start < end)
-                return;
-
-            if (!hasOvernightSession || start < rollover)
-                rollover = start;
-
-            hasOvernightSession = true;
-        }
-
-        private void BuildSessionWindow(DateTime tradingDay, TimeSpan start, TimeSpan end, out DateTime sessionStart, out DateTime sessionEnd)
-        {
-            if (start < end)
+            if (end > start)
             {
-                sessionStart = tradingDay.Date.Add(start);
-                sessionEnd = tradingDay.Date.Add(end);
+                sessionEnd = sessionDate.Date.Add(end);
                 return;
             }
 
-            sessionStart = tradingDay.Date.AddDays(-1).Add(start);
-            sessionEnd = tradingDay.Date.Add(end);
+            sessionEnd = sessionDate.Date.AddDays(1).Add(end);
         }
 
         private TimeSpan ParseTime(string value, string fallback)
@@ -488,6 +542,14 @@ namespace NinjaTrader.NinjaScript.Indicators
         [NinjaScriptProperty]
         [Display(Name = "New York End Time", Order = 6, GroupName = "Session Times")]
         public string NewYorkEndTime { get; set; }
+
+        [NinjaScriptProperty]
+        [Display(Name = "License Key", Order = 1, GroupName = "License")]
+        public string LicenseKey { get; set; }
+
+        [NinjaScriptProperty]
+        [Display(Name = "Use Local License Server", Order = 2, GroupName = "License")]
+        public bool UseLocalLicenseServer { get; set; }
 
         [NinjaScriptProperty]
         [Display(Name = "Show Asia session levels", Order = 1, GroupName = "Display")]
@@ -585,3 +647,91 @@ namespace NinjaTrader.NinjaScript.Indicators
         }
     }
 }
+
+
+#region NinjaScript generated code. Neither change nor remove.
+
+namespace NinjaTrader.NinjaScript.Indicators
+{
+	public partial class Indicator : NinjaTrader.Gui.NinjaScript.IndicatorRenderBase
+	{
+		private GGSessionHighLow[] cacheGGSessionHighLow;
+		public GGSessionHighLow GGSessionHighLow(string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle)
+		{
+			return GGSessionHighLow(Input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, true);
+		}
+
+		public GGSessionHighLow GGSessionHighLow(string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle, string licenseKey, bool useLocalLicenseServer)
+		{
+			return GGSessionHighLow(Input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, licenseKey, useLocalLicenseServer);
+		}
+
+		public GGSessionHighLow GGSessionHighLow(ISeries<double> input, string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle)
+		{
+			return GGSessionHighLow(input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, true);
+		}
+
+		public GGSessionHighLow GGSessionHighLow(ISeries<double> input, string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle, string licenseKey, bool useLocalLicenseServer)
+		{
+			if (cacheGGSessionHighLow != null)
+				for (int idx = 0; idx < cacheGGSessionHighLow.Length; idx++)
+					if (cacheGGSessionHighLow[idx] != null && cacheGGSessionHighLow[idx].AsiaStartTime == asiaStartTime && cacheGGSessionHighLow[idx].AsiaEndTime == asiaEndTime && cacheGGSessionHighLow[idx].LondonStartTime == londonStartTime && cacheGGSessionHighLow[idx].LondonEndTime == londonEndTime && cacheGGSessionHighLow[idx].NewYorkStartTime == newYorkStartTime && cacheGGSessionHighLow[idx].NewYorkEndTime == newYorkEndTime && cacheGGSessionHighLow[idx].LicenseKey == licenseKey && cacheGGSessionHighLow[idx].UseLocalLicenseServer == useLocalLicenseServer && cacheGGSessionHighLow[idx].ShowAsiaSessionLevels == showAsiaSessionLevels && cacheGGSessionHighLow[idx].ShowLondonSessionLevels == showLondonSessionLevels && cacheGGSessionHighLow[idx].ShowNewYorkSessionLevels == showNewYorkSessionLevels && cacheGGSessionHighLow[idx].ShowLabels == showLabels && cacheGGSessionHighLow[idx].ExtendLevelsToRight == extendLevelsToRight && cacheGGSessionHighLow[idx].LineWidth == lineWidth && cacheGGSessionHighLow[idx].LineStyle == lineStyle && cacheGGSessionHighLow[idx].EqualsInput(input))
+						return cacheGGSessionHighLow[idx];
+			return CacheIndicator<GGSessionHighLow>(new GGSessionHighLow(){ AsiaStartTime = asiaStartTime, AsiaEndTime = asiaEndTime, LondonStartTime = londonStartTime, LondonEndTime = londonEndTime, NewYorkStartTime = newYorkStartTime, NewYorkEndTime = newYorkEndTime, LicenseKey = licenseKey, UseLocalLicenseServer = useLocalLicenseServer, ShowAsiaSessionLevels = showAsiaSessionLevels, ShowLondonSessionLevels = showLondonSessionLevels, ShowNewYorkSessionLevels = showNewYorkSessionLevels, ShowLabels = showLabels, ExtendLevelsToRight = extendLevelsToRight, LineWidth = lineWidth, LineStyle = lineStyle }, input, ref cacheGGSessionHighLow);
+		}
+	}
+}
+
+namespace NinjaTrader.NinjaScript.MarketAnalyzerColumns
+{
+	public partial class MarketAnalyzerColumn : MarketAnalyzerColumnBase
+	{
+		public Indicators.GGSessionHighLow GGSessionHighLow(string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle)
+		{
+			return indicator.GGSessionHighLow(Input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, true);
+		}
+
+		public Indicators.GGSessionHighLow GGSessionHighLow(ISeries<double> input , string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle)
+		{
+			return indicator.GGSessionHighLow(input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, true);
+		}
+
+		public Indicators.GGSessionHighLow GGSessionHighLow(string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle, string licenseKey, bool useLocalLicenseServer)
+		{
+			return indicator.GGSessionHighLow(Input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, licenseKey, useLocalLicenseServer);
+		}
+
+		public Indicators.GGSessionHighLow GGSessionHighLow(ISeries<double> input , string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle, string licenseKey, bool useLocalLicenseServer)
+		{
+			return indicator.GGSessionHighLow(input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, licenseKey, useLocalLicenseServer);
+		}
+	}
+}
+
+namespace NinjaTrader.NinjaScript.Strategies
+{
+	public partial class Strategy : NinjaTrader.Gui.NinjaScript.StrategyRenderBase
+	{
+		public Indicators.GGSessionHighLow GGSessionHighLow(string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle)
+		{
+			return indicator.GGSessionHighLow(Input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, true);
+		}
+
+		public Indicators.GGSessionHighLow GGSessionHighLow(ISeries<double> input , string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle)
+		{
+			return indicator.GGSessionHighLow(input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, string.Empty, true);
+		}
+
+		public Indicators.GGSessionHighLow GGSessionHighLow(string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle, string licenseKey, bool useLocalLicenseServer)
+		{
+			return indicator.GGSessionHighLow(Input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, licenseKey, useLocalLicenseServer);
+		}
+
+		public Indicators.GGSessionHighLow GGSessionHighLow(ISeries<double> input , string asiaStartTime, string asiaEndTime, string londonStartTime, string londonEndTime, string newYorkStartTime, string newYorkEndTime, bool showAsiaSessionLevels, bool showLondonSessionLevels, bool showNewYorkSessionLevels, bool showLabels, bool extendLevelsToRight, int lineWidth, DashStyleHelper lineStyle, string licenseKey, bool useLocalLicenseServer)
+		{
+			return indicator.GGSessionHighLow(input, asiaStartTime, asiaEndTime, londonStartTime, londonEndTime, newYorkStartTime, newYorkEndTime, showAsiaSessionLevels, showLondonSessionLevels, showNewYorkSessionLevels, showLabels, extendLevelsToRight, lineWidth, lineStyle, licenseKey, useLocalLicenseServer);
+		}
+	}
+}
+
+#endregion

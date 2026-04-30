@@ -79,8 +79,31 @@ export default async function PrivateDownloadPage({
     );
   }
 
-  const { releases, bundleRelease } = getDeliveryDownloadData(record);
-  const hasBundlePurchase = Boolean(bundleRelease);
+  const { releases, hasBundlePurchase } = getDeliveryDownloadData(record);
+  const activationSupportText = hasBundlePurchase
+    ? "This same license key activates all four included Good Gains tools."
+    : "Keep this key safe. Your purchase is linked to this license key.";
+  const deliverySteps = [
+    {
+      step: "Step 1",
+      title: "Download",
+      text: hasBundlePurchase
+        ? "Download each included ZIP from this page so you can install every tool separately."
+        : "Download your latest ZIP file from this page."
+    },
+    {
+      step: "Step 2",
+      title: "Import into NinjaTrader 8",
+      text: "Use Tools > Import > NinjaScript Add-On to bring the file into NinjaTrader."
+    },
+    {
+      step: "Step 3",
+      title: "Activate with license key",
+      text: hasBundlePurchase
+        ? "Use the same license key shown here to activate each included tool."
+        : "Use the license key shown here when the activation prompt appears."
+    }
+  ];
 
   return (
     <>
@@ -97,7 +120,7 @@ export default async function PrivateDownloadPage({
             <div className="mt-4 flex flex-wrap gap-3">
               <CopyTextButton text={record.licenseKey} label="Copy license key" copiedLabel="License copied" />
             </div>
-            <p className="mt-4 text-sm leading-7 text-zinc-300">Keep this key safe. Your purchase is linked to this license key.</p>
+            <p className="mt-4 text-sm leading-7 text-zinc-300">{activationSupportText}</p>
             <p className="mt-2 text-sm font-medium text-emerald-200">Lifetime updates + ongoing improvements</p>
           </div>
         }
@@ -112,19 +135,14 @@ export default async function PrivateDownloadPage({
               <p className="mt-3 max-w-2xl text-base leading-8 text-zinc-300">
                 Download your latest files, copy your license key, and follow the quick setup steps below to get everything running inside NinjaTrader 8.
               </p>
-              <p className="mt-3 text-sm font-medium text-emerald-200">You now have full access to the Good Gains system</p>
-              <p className="mt-2 text-sm font-medium text-zinc-100">Your license is now active and ready to use</p>
+              <p className="mt-3 text-sm font-medium text-emerald-200">
+                {hasBundlePurchase ? "One bundle purchase. Four separate product downloads." : "You now have full access to the Good Gains system"}
+              </p>
+              <p className="mt-2 text-sm font-medium text-zinc-100">
+                {hasBundlePurchase ? "This same license key is ready to activate all four included tools." : "Your license is now active and ready to use"}
+              </p>
 
               <div className="mt-6 flex flex-wrap gap-3">
-                {hasBundlePurchase ? (
-                  <a
-                    href={`/api/download/${record.token}/bundle`}
-                    download
-                    className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300"
-                  >
-                    Download all products
-                  </a>
-                ) : null}
                 <CopyTextButton text={record.licenseKey} label="Copy license key" copiedLabel="License copied" />
                 <span className="inline-flex items-center justify-center rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-zinc-100">
                   Installation guide coming soon
@@ -138,23 +156,7 @@ export default async function PrivateDownloadPage({
               </div>
 
               <div className="mt-8 grid gap-4 md:grid-cols-3">
-                {[
-                  {
-                    step: "Step 1",
-                    title: "Download",
-                    text: "Download your latest ZIP file or the full bundle package from this page."
-                  },
-                  {
-                    step: "Step 2",
-                    title: "Import into NinjaTrader 8",
-                    text: "Use Tools > Import > NinjaScript Add-On to bring the file into NinjaTrader."
-                  },
-                  {
-                    step: "Step 3",
-                    title: "Activate with license key",
-                    text: "Use the license key shown here when the activation prompt appears."
-                  }
-                ].map((item) => (
+                {deliverySteps.map((item) => (
                   <div key={item.step} className="rounded-[1.5rem] border border-white/10 bg-black/35 p-5">
                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300">{item.step}</p>
                     <h3 className="mt-3 text-lg font-semibold text-white">{item.title}</h3>
@@ -189,24 +191,15 @@ export default async function PrivateDownloadPage({
             </div>
           </div>
 
-          {bundleRelease ? (
+          {hasBundlePurchase ? (
             <div className="rounded-[2rem] border border-white/10 bg-zinc-950/80 p-8">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300">Bundle Access</p>
-                  <h2 className="mt-2 text-3xl font-semibold text-white">{bundleRelease.name}</h2>
-                  <p className="mt-2 text-sm leading-7 text-zinc-300">
-                    Bundle version {bundleRelease.version} includes all four Good Gains tools in one package, ready for re-download anytime from this page.
-                  </p>
-                  <p className="mt-3 text-sm font-medium text-emerald-200">Recommended first step: Download all tools</p>
-                </div>
-                <a
-                  href={`/api/download/${record.token}/bundle`}
-                  download
-                  className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-6 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300"
-                >
-                  Download Bundle
-                </a>
+              <div className="max-w-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300">Bundle Access</p>
+                <h2 className="mt-2 text-3xl font-semibold text-white">Your bundle includes four separate downloads</h2>
+                <p className="mt-2 text-sm leading-7 text-zinc-300">
+                  Download each tool individually below. Your single bundle license key works across GG RR Trade Panel, GG Daily Account Lock AddOn, GG Session High/Low Indicator, and GG SMI Precision.
+                </p>
+                <p className="mt-3 text-sm font-medium text-emerald-200">No combined bundle ZIP is required.</p>
               </div>
             </div>
           ) : null}
@@ -237,7 +230,7 @@ export default async function PrivateDownloadPage({
                       download
                       className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-6 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300"
                     >
-                      Download {release.version}
+                      Download {product.name}
                     </a>
                     <p className="text-sm text-zinc-300">{release.fileName}</p>
                   </div>

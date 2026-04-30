@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { DeliveryRecord, buildPrivateDownloadUrl, getDeliveryDownloadData } from "@/lib/delivery";
+import { bundleDownload } from "@/lib/downloads";
 import { siteConfig } from "@/lib/site";
 
 export const TEST_DELIVERY_EMAIL = "goodgainsindicators@gmail.com";
@@ -16,7 +17,7 @@ function escapeHtml(value: string) {
 
 function buildEmailContent(record: DeliveryRecord) {
   const downloadUrl = buildPrivateDownloadUrl(record.token);
-  const { releases, bundleRelease } = getDeliveryDownloadData(record);
+  const { releases, hasBundlePurchase } = getDeliveryDownloadData(record);
 
   const textLines = [
     `Product: ${record.purchasedProductName}`,
@@ -26,8 +27,9 @@ function buildEmailContent(record: DeliveryRecord) {
     "Short installation instructions:"
   ];
 
-  if (bundleRelease) {
+  if (hasBundlePurchase) {
     textLines.push("Import each included ZIP into NinjaTrader 8 using Tools > Import > NinjaScript Add-On.");
+    textLines.push("Use the same license key for every included Good Gains tool.");
     textLines.push("Open each tool after import and keep your license key available.");
   } else {
     releases[0]?.release.installNotes.forEach((note) => textLines.push(`- ${note}`));
@@ -45,7 +47,7 @@ function buildEmailContent(record: DeliveryRecord) {
     .join("");
 
   const installList =
-    bundleRelease?.installNotes ?? releases[0]?.release.installNotes ?? [];
+    (hasBundlePurchase ? bundleDownload.installNotes : releases[0]?.release.installNotes) ?? [];
 
   const html = `
     <div style="background:#09090b;padding:32px;font-family:Arial,sans-serif;color:#e4e4e7;">
