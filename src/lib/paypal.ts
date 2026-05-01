@@ -1,3 +1,6 @@
+import { getBaseUrl } from "@/lib/base-url";
+export { getBaseUrl } from "@/lib/base-url";
+
 type PayPalAccessTokenResponse = {
   access_token: string;
 };
@@ -47,10 +50,6 @@ type PayPalCustomIdPayload = {
   productName: string;
   couponCode?: string;
 };
-
-export function getBaseUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "http://localhost:3000";
-}
 
 function getPayPalApiBaseUrl() {
   return process.env.PAYPAL_ENV === "live"
