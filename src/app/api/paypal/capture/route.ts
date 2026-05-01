@@ -83,6 +83,12 @@ export async function GET(request: Request) {
       }
     }
 
+    console.log("PayPal email send attempt", {
+      to: record.customerEmail,
+      product: record.purchasedProductName,
+      licenseKey: record.licenseKey
+    });
+
     try {
       const emailResult = await sendPurchaseEmail(record);
       console.log("Email sent successfully", {

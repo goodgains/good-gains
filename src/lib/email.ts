@@ -4,6 +4,15 @@ import { DeliveryRecord, buildPrivateDownloadUrl, getDeliveryDownloadData } from
 import { bundleDownload } from "@/lib/downloads";
 import { siteConfig } from "@/lib/site";
 
+function resolveConfiguredEmail(value?: string | null) {
+  const normalized = value?.trim();
+  if (!normalized || !normalized.includes("@")) {
+    return null;
+  }
+
+  return normalized;
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -108,7 +117,7 @@ function buildEmailContent(record: DeliveryRecord) {
 
 function hasRealResendConfig() {
   const resendApiKey = process.env.RESEND_API_KEY?.trim();
-  const fromEmail = process.env.RESEND_FROM_EMAIL?.trim();
+  const fromEmail = resolveConfiguredEmail(process.env.RESEND_FROM_EMAIL);
 
   if (!resendApiKey || !fromEmail) {
     return false;
@@ -145,6 +154,13 @@ async function sendViaResend(input: {
   html: string;
   text: string;
 }) {
+  console.log("Resend request starting", {
+    to: input.to,
+    from: input.from,
+    replyTo: input.replyTo,
+    subject: input.subject
+  });
+
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -163,12 +179,29 @@ async function sendViaResend(input: {
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error("Resend request failed", {
+      status: response.status,
+      to: input.to,
+      from: input.from,
+      replyTo: input.replyTo,
+      subject: input.subject,
+      error: errorText
+    });
     throw new Error(
       `Resend email failed with status ${response.status} for from="${input.from}" replyTo="${input.replyTo}". Response: ${errorText}`
     );
   }
 
   const result = (await response.json().catch(() => null)) as Record<string, unknown> | null;
+
+  console.log("Resend request succeeded", {
+    status: response.status,
+    to: input.to,
+    from: input.from,
+    replyTo: input.replyTo,
+    subject: input.subject,
+    providerResponse: result
+  });
 
   return {
     id: typeof result?.id === "string" ? result.id : null,
@@ -217,8 +250,8 @@ async function sendViaResendWithRetry(input: {
 export async function sendPurchaseEmail(record: DeliveryRecord) {
   const content = buildEmailContent(record);
   const resendApiKey = process.env.RESEND_API_KEY?.trim();
-  const fromEmail = process.env.RESEND_FROM_EMAIL?.trim();
-  const fallbackFromEmail = process.env.RESEND_FALLBACK_FROM_EMAIL?.trim();
+  const fromEmail = resolveConfiguredEmail(process.env.RESEND_FROM_EMAIL);
+  const fallbackFromEmail = resolveConfiguredEmail(process.env.RESEND_FALLBACK_FROM_EMAIL);
   const fromName = siteConfig.emailFromName;
   const replyTo = siteConfig.supportEmail;
 
@@ -240,7 +273,7 @@ export async function sendPurchaseEmail(record: DeliveryRecord) {
   }
 
   const primaryFrom = `${fromName} <${fromEmail}>`;
-  const fallbackFrom = `${fromName} <${fallbackFromEmail}>`;
+  const fallbackFrom = fallbackFromEmail ? `${fromName} <${fallbackFromEmail}>` : null;
 
   try {
     const result = await sendViaResendWithRetry({
@@ -264,17 +297,26 @@ export async function sendPurchaseEmail(record: DeliveryRecord) {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const shouldRetryWithFallback =
-      Boolean(fallbackFromEmail) &&
-      !fallbackFrom.toLowerCase().includes(fromEmail.toLowerCase()) &&
+      Boolean(fallbackFromEmail && fallbackFrom) &&
+      !fallbackFrom!.toLowerCase().includes(fromEmail.toLowerCase()) &&
       errorMessage.toLowerCase().includes("domain is not verified");
 
     if (!shouldRetryWithFallback) {
       throw error;
     }
 
+    console.warn("Retrying purchase email with fallback sender", {
+      to: record.customerEmail,
+      product: record.purchasedProductName,
+      primaryFrom,
+      fallbackFrom,
+      replyTo,
+      error: errorMessage
+    });
+
     const fallbackResult = await sendViaResendWithRetry({
       resendApiKey,
-      from: fallbackFrom,
+      from: fallbackFrom!,
       to: [record.customerEmail],
       replyTo,
       subject: content.subject,

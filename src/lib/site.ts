@@ -1,4 +1,19 @@
-const supportEmail = process.env.SUPPORT_EMAIL?.trim() || "support@goodgainsindicators.com";
+function resolveConfiguredEmail(...values: Array<string | undefined>) {
+  for (const value of values) {
+    const normalized = value?.trim();
+    if (!normalized) continue;
+    if (!normalized.includes("@")) continue;
+    return normalized;
+  }
+
+  return "support@goodgainsindicators.com";
+}
+
+const supportEmail = resolveConfiguredEmail(
+  process.env.NEXT_PUBLIC_SUPPORT_EMAIL,
+  process.env.SUPPORT_EMAIL
+);
+
 const emailFromName = process.env.EMAIL_FROM_NAME?.trim() || "Good Gains Support";
 
 export const siteConfig = {

@@ -119,10 +119,12 @@ export async function POST(request: Request) {
         licenseKey: record.licenseKey,
         emailDelivery: {
           sent: true,
-          provider: emailResult.mode,
+          provider: "resend",
+          mode: emailResult.mode,
           messageId: emailResult.id,
           from: emailResult.from,
-          replyTo: emailResult.replyTo
+          replyTo: emailResult.replyTo,
+          providerResponse: "providerResponse" in emailResult ? emailResult.providerResponse : null
         }
       });
 
@@ -152,6 +154,7 @@ export async function POST(request: Request) {
         licenseKey: record.licenseKey,
         emailDelivery: {
           sent: false,
+          provider: "resend",
           error: errorMessage
         }
       });
