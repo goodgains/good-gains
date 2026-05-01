@@ -25,6 +25,8 @@ namespace NinjaTrader.NinjaScript.Indicators
         private const string ProductDisplayName = "GG SMI Precision";
         private const string LocalLicenseServerUrl = "http://127.0.0.1:3000/api/verify-license";
         private const string ProductionLicenseServerUrl = "https://goodgainsindicators.com/api/verify-license";
+        private const string EmptyLicenseMessage = "Enter License Key";
+        private const string InvalidLicenseMessage = "Invalid License";
         private const int LicenseRequestTimeoutMs = 5000;
         private const string LicenseWarningTag = "GGSMIPRECISION_LICENSE_WARNING";
 
@@ -219,7 +221,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 OverboughtFillBrush = new SolidColorBrush(WpfColor.FromArgb(87, 0, 128, 0));
                 OversoldFillBrush = new SolidColorBrush(WpfColor.FromArgb(87, 255, 0, 0));
                 LicenseKey = string.Empty;
-                UseLocalLicenseServer = true;
+                UseLocalLicenseServer = false;
                 licenseValidated = false;
                 licenseIsValid = false;
                 licenseStatusMessage = string.Empty;
@@ -248,6 +250,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 Plots[2].PlotStyle = PlotStyle.Line;
                 Plots[3].PlotStyle = PlotStyle.Line;
                 Plots[4].PlotStyle = PlotStyle.Line;
+                ValidateLicenseStatus();
             }
         }
 
@@ -264,7 +267,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 Draw.TextFixed(
                     this,
                     LicenseWarningTag,
-                    "Invalid or missing license key for GG SMI Precision.",
+                    string.IsNullOrWhiteSpace(licenseStatusMessage) ? InvalidLicenseMessage : licenseStatusMessage,
                     TextPosition.TopLeft,
                     Brushes.OrangeRed,
                     new SimpleFont("Segoe UI", 12),
@@ -445,7 +448,7 @@ namespace NinjaTrader.NinjaScript.Indicators
             licenseStatusMessage = isValid
                 ? string.Empty
                 : (string.IsNullOrWhiteSpace(message)
-                    ? "Invalid or missing license key for GG SMI Precision."
+                    ? InvalidLicenseMessage
                     : message);
         }
 
@@ -463,7 +466,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 
             if (string.IsNullOrWhiteSpace(normalizedLicenseKey))
             {
-                SetLicenseState(false, "Invalid or missing license key for GG SMI Precision.");
+                SetLicenseState(false, EmptyLicenseMessage);
                 return;
             }
 
@@ -503,13 +506,13 @@ namespace NinjaTrader.NinjaScript.Indicators
 
                     SetLicenseState(
                         isValid,
-                        isValid ? string.Empty : "Invalid or missing license key for GG SMI Precision.");
+                        isValid ? string.Empty : InvalidLicenseMessage);
                 }
             }
             catch (Exception ex)
             {
                 Print(ProductDisplayName + " license validation failed: " + ex.Message);
-                SetLicenseState(false, "Invalid or missing license key for GG SMI Precision.");
+                SetLicenseState(false, InvalidLicenseMessage);
             }
         }
     }

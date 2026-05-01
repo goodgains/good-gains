@@ -49,6 +49,8 @@ namespace NinjaTrader.NinjaScript.Indicators
         private const string ProductDisplayName = "GG RR Trade Panel";
         private const string LocalLicenseServerUrl = "http://127.0.0.1:3000/api/verify-license";
         private const string ProductionLicenseServerUrl = "https://goodgainsindicators.com/api/verify-license";
+        private const string EmptyLicenseMessage = "Enter License Key";
+        private const string InvalidLicenseMessage = "Invalid License";
         private const int LicenseRequestTimeoutMs = 5000;
         private static readonly object HostUiOwnerSync = new object();
         private static readonly Dictionary<Window, WeakReference<RRtradePannel>> HostUiOwners = new Dictionary<Window, WeakReference<RRtradePannel>>();
@@ -223,7 +225,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 BoxWidthPixels = 280;
                 PointsPresetValues = "1,2,5,10,15,20";
                 LicenseKey = string.Empty;
-                UseLocalLicenseServer = true;
+                UseLocalLicenseServer = false;
                 tpPointsValue = 15;
                 slPointsValue = 15;
                 licenseValidated = false;
@@ -231,6 +233,10 @@ namespace NinjaTrader.NinjaScript.Indicators
                 licenseStatusMessage = string.Empty;
                 lastValidatedLicenseKey = string.Empty;
                 lastValidatedUseLocalLicenseServer = UseLocalLicenseServer;
+            }
+            else if (State == State.DataLoaded)
+            {
+                ValidateLicenseStatus();
             }
             else if (State == State.Historical)
             {
@@ -327,7 +333,7 @@ namespace NinjaTrader.NinjaScript.Indicators
             licenseStatusMessage = isValid
                 ? string.Empty
                 : (string.IsNullOrWhiteSpace(message)
-                    ? "Invalid or missing license key for GG RR Trade Panel."
+                    ? InvalidLicenseMessage
                     : message);
 
             ApplyLicenseStateToUi();
@@ -347,7 +353,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 
             if (string.IsNullOrWhiteSpace(normalizedLicenseKey))
             {
-                SetLicenseState(false, "Invalid or missing license key for GG RR Trade Panel.");
+                SetLicenseState(false, EmptyLicenseMessage);
                 return;
             }
 
@@ -387,13 +393,13 @@ namespace NinjaTrader.NinjaScript.Indicators
 
                     SetLicenseState(
                         isValid,
-                        isValid ? string.Empty : "Invalid or missing license key for GG RR Trade Panel.");
+                        isValid ? string.Empty : InvalidLicenseMessage);
                 }
             }
             catch (Exception ex)
             {
                 Print(ProductDisplayName + " license validation failed: " + ex.Message);
-                SetLicenseState(false, "Invalid or missing license key for GG RR Trade Panel.");
+                SetLicenseState(false, InvalidLicenseMessage);
             }
         }
 
@@ -408,7 +414,7 @@ namespace NinjaTrader.NinjaScript.Indicators
             if (IsLicenseCurrentlyValid())
                 return true;
 
-            SetInfoText("Invalid or missing license key for GG RR Trade Panel.");
+            SetInfoText(string.IsNullOrWhiteSpace(licenseStatusMessage) ? InvalidLicenseMessage : licenseStatusMessage);
             return false;
         }
 

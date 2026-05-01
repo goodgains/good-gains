@@ -103,39 +103,71 @@ export async function POST(request: Request) {
       const emailResult = await sendPurchaseEmail(record);
       console.log("Free coupon email sent successfully", {
         provider: emailResult.mode,
-        messageId: "id" in emailResult ? emailResult.id : null,
-        from: "from" in emailResult ? emailResult.from : null,
-        replyTo: "replyTo" in emailResult ? emailResult.replyTo : null,
+        messageId: emailResult.id,
+        status: "status" in emailResult ? emailResult.status : null,
+        from: emailResult.from,
+        replyTo: emailResult.replyTo,
+        providerResponse: "providerResponse" in emailResult ? emailResult.providerResponse : null,
         to: record.customerEmail,
         product: record.purchasedProductName,
         licenseKey: record.licenseKey
       });
+
+      const response = NextResponse.json({
+        success: true,
+        downloadUrl: `/downloads/${record.token}`,
+        licenseKey: record.licenseKey,
+        emailDelivery: {
+          sent: true,
+          provider: emailResult.mode,
+          messageId: emailResult.id,
+          from: emailResult.from,
+          replyTo: emailResult.replyTo
+        }
+      });
+
+      response.cookies.set({
+        name: DOWNLOAD_ACCESS_COOKIE,
+        value: createDownloadAccessCookieValue(record.token, record.customerEmail),
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        expires: record.expiresAt ? new Date(record.expiresAt) : undefined
+      });
+
+      return response;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("Free coupon email failed", {
         to: record.customerEmail,
         product: record.purchasedProductName,
         licenseKey: record.licenseKey,
-        error: error instanceof Error ? error.message : String(error)
+        error: errorMessage
       });
+
+      const response = NextResponse.json({
+        success: true,
+        downloadUrl: `/downloads/${record.token}`,
+        licenseKey: record.licenseKey,
+        emailDelivery: {
+          sent: false,
+          error: errorMessage
+        }
+      });
+
+      response.cookies.set({
+        name: DOWNLOAD_ACCESS_COOKIE,
+        value: createDownloadAccessCookieValue(record.token, record.customerEmail),
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        expires: record.expiresAt ? new Date(record.expiresAt) : undefined
+      });
+
+      return response;
     }
-
-    const response = NextResponse.json({
-      success: true,
-      downloadUrl: `/downloads/${record.token}`,
-      licenseKey: record.licenseKey
-    });
-
-    response.cookies.set({
-      name: DOWNLOAD_ACCESS_COOKIE,
-      value: createDownloadAccessCookieValue(record.token, record.customerEmail),
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      expires: record.expiresAt ? new Date(record.expiresAt) : undefined
-    });
-
-    return response;
   } catch (error) {
     return NextResponse.json(
       {

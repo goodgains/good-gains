@@ -25,6 +25,8 @@ namespace NinjaTrader.NinjaScript.Indicators
         private const string ProductDisplayName = "GG Session High/Low Indicator";
         private const string LocalLicenseServerUrl = "http://127.0.0.1:3000/api/verify-license";
         private const string ProductionLicenseServerUrl = "https://goodgainsindicators.com/api/verify-license";
+        private const string EmptyLicenseMessage = "Enter License Key";
+        private const string InvalidLicenseMessage = "Invalid License";
         private const int LicenseRequestTimeoutMs = 5000;
         private const string LicenseWarningTag = "GGSESSIONHIGHLOW_LICENSE_WARNING";
         private const string DefaultAsiaStart = "01:00";
@@ -109,7 +111,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 NewYorkHighBrush = CreateFrozenBrush(Color.FromRgb(248, 113, 113));
                 NewYorkLowBrush = CreateFrozenBrush(Color.FromRgb(251, 146, 60));
                 LicenseKey = string.Empty;
-                UseLocalLicenseServer = true;
+                UseLocalLicenseServer = false;
                 licenseValidated = false;
                 licenseIsValid = false;
                 licenseStatusMessage = string.Empty;
@@ -121,6 +123,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 asiaSession = new SessionState("Asia", "Asia");
                 londonSession = new SessionState("London", "London");
                 newYorkSession = new SessionState("NewYork", "New York");
+                ValidateLicenseStatus();
             }
         }
 
@@ -136,7 +139,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 Draw.TextFixed(
                     this,
                     LicenseWarningTag,
-                    "Invalid or missing license key for GG Session High/Low Indicator.",
+                    string.IsNullOrWhiteSpace(licenseStatusMessage) ? InvalidLicenseMessage : licenseStatusMessage,
                     TextPosition.TopLeft,
                     Brushes.OrangeRed,
                     new SimpleFont("Segoe UI", 12),
@@ -216,7 +219,7 @@ namespace NinjaTrader.NinjaScript.Indicators
             licenseStatusMessage = isValid
                 ? string.Empty
                 : (string.IsNullOrWhiteSpace(message)
-                    ? "Invalid or missing license key for GG Session High/Low Indicator."
+                    ? InvalidLicenseMessage
                     : message);
         }
 
@@ -234,7 +237,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 
             if (string.IsNullOrWhiteSpace(normalizedLicenseKey))
             {
-                SetLicenseState(false, "Invalid or missing license key for GG Session High/Low Indicator.");
+                SetLicenseState(false, EmptyLicenseMessage);
                 return;
             }
 
@@ -274,13 +277,13 @@ namespace NinjaTrader.NinjaScript.Indicators
 
                     SetLicenseState(
                         isValid,
-                        isValid ? string.Empty : "Invalid or missing license key for GG Session High/Low Indicator.");
+                        isValid ? string.Empty : InvalidLicenseMessage);
                 }
             }
             catch (Exception ex)
             {
                 Print(ProductDisplayName + " license validation failed: " + ex.Message);
-                SetLicenseState(false, "Invalid or missing license key for GG Session High/Low Indicator.");
+                SetLicenseState(false, InvalidLicenseMessage);
             }
         }
 

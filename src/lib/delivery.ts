@@ -328,7 +328,7 @@ function buildAccessSignature(token: string, email: string) {
 
 export function createDownloadAccessCookieValue(token: string, email: string) {
   const normalizedEmail = normalizeEmail(email);
-  return `${token}:${normalizedEmail}:${buildAccessSignature(token, normalizedEmail)}`;
+  return `${normalizedEmail}:${buildAccessSignature(token, normalizedEmail)}`;
 }
 
 function buildTemporaryUnlockSignature(token: string, email: string) {
@@ -350,13 +350,79 @@ export function hasTemporaryUnlockAccess(record: DeliveryRecord, unlockToken?: s
 export function hasDownloadAccess(record: DeliveryRecord, cookieValue?: string | null) {
   if (!cookieValue) return false;
 
-  const [token, email, signature] = cookieValue.split(":");
+  let normalizedCookieValue = cookieValue;
 
-  if (!token || !email || !signature) return false;
-  if (token !== record.token) return false;
-  if (email !== record.customerEmail) return false;
+  try {
+    normalizedCookieValue = decodeURIComponent(cookieValue);
+  } catch {
+    normalizedCookieValue = cookieValue;
+  }
 
-  return signature === buildAccessSignature(token, email);
+  const parts = normalizedCookieValue.split(":");
+
+  if (parts.length === 2) {
+    const [email, signature] = parts;
+
+    if (!email || !signature) return false;
+    if (email !== record.customerEmail) {
+      console.warn("Download access email mismatch", {
+        cookieEmail: email,
+        recordEmail: record.customerEmail
+      });
+      return false;
+    }
+
+    const expectedSignature = buildAccessSignature(record.token, email);
+    const isMatch = signature === expectedSignature;
+
+    if (!isMatch) {
+      console.warn("Download access signature mismatch", {
+        tokenPrefix: record.token.slice(0, 24),
+        email,
+        expectedPrefix: expectedSignature.slice(0, 12),
+        actualPrefix: signature.slice(0, 12)
+      });
+    }
+
+    return isMatch;
+  }
+
+  if (parts.length === 3) {
+    const [token, email, signature] = parts;
+
+    if (!token || !email || !signature) return false;
+    if (token !== record.token) {
+      console.warn("Legacy download access token mismatch", {
+        cookieTokenPrefix: token.slice(0, 24),
+        recordTokenPrefix: record.token.slice(0, 24)
+      });
+      return false;
+    }
+
+    if (email !== record.customerEmail) {
+      console.warn("Legacy download access email mismatch", {
+        cookieEmail: email,
+        recordEmail: record.customerEmail
+      });
+      return false;
+    }
+
+    const expectedSignature = buildAccessSignature(token, email);
+    const isMatch = signature === expectedSignature;
+
+    if (!isMatch) {
+      console.warn("Legacy download access signature mismatch", {
+        tokenPrefix: token.slice(0, 24),
+        email,
+        expectedPrefix: expectedSignature.slice(0, 12),
+        actualPrefix: signature.slice(0, 12)
+      });
+    }
+
+    return isMatch;
+  }
+
+  return false;
 }
 
 export async function getValidatedDeliveryByToken(token: string) {

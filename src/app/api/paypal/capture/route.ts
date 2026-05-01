@@ -87,9 +87,11 @@ export async function GET(request: Request) {
       const emailResult = await sendPurchaseEmail(record);
       console.log("Email sent successfully", {
         provider: emailResult.mode,
-        messageId: "id" in emailResult ? emailResult.id : null,
-        from: "from" in emailResult ? emailResult.from : null,
-        replyTo: "replyTo" in emailResult ? emailResult.replyTo : null,
+        messageId: emailResult.id,
+        status: "status" in emailResult ? emailResult.status : null,
+        from: emailResult.from,
+        replyTo: emailResult.replyTo,
+        providerResponse: "providerResponse" in emailResult ? emailResult.providerResponse : null,
         to: record.customerEmail,
         product: record.purchasedProductName,
         licenseKey: record.licenseKey

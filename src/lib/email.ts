@@ -164,15 +164,54 @@ async function sendViaResend(input: {
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(
-      `Resend email failed for from="${input.from}" replyTo="${input.replyTo}". Response: ${errorText}`
+      `Resend email failed with status ${response.status} for from="${input.from}" replyTo="${input.replyTo}". Response: ${errorText}`
     );
   }
 
-  const result = (await response.json().catch(() => null)) as { id?: string } | null;
+  const result = (await response.json().catch(() => null)) as Record<string, unknown> | null;
 
   return {
-    id: result?.id ?? null
+    id: typeof result?.id === "string" ? result.id : null,
+    status: response.status,
+    result
   };
+}
+
+function isResendRateLimitError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  const normalized = message.toLowerCase();
+  return normalized.includes("status 429") || normalized.includes("rate_limit_exceeded");
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function sendViaResendWithRetry(input: {
+  resendApiKey: string;
+  from: string;
+  to: string[];
+  replyTo: string;
+  subject: string;
+  html: string;
+  text: string;
+}) {
+  try {
+    return await sendViaResend(input);
+  } catch (error) {
+    if (!isResendRateLimitError(error)) {
+      throw error;
+    }
+
+    console.warn("Resend rate limit hit, retrying once", {
+      from: input.from,
+      replyTo: input.replyTo,
+      to: input.to
+    });
+
+    await delay(1250);
+    return sendViaResend(input);
+  }
 }
 
 export async function sendPurchaseEmail(record: DeliveryRecord) {
@@ -182,6 +221,16 @@ export async function sendPurchaseEmail(record: DeliveryRecord) {
   const fallbackFromEmail = process.env.RESEND_FALLBACK_FROM_EMAIL?.trim();
   const fromName = siteConfig.emailFromName;
   const replyTo = siteConfig.supportEmail;
+
+  console.log("Preparing purchase email", {
+    to: record.customerEmail,
+    product: record.purchasedProductName,
+    licenseKey: record.licenseKey,
+    hasResendApiKey: Boolean(resendApiKey),
+    fromEmail: fromEmail ?? null,
+    fallbackFromEmail: fallbackFromEmail ?? null,
+    replyTo
+  });
 
   if (!hasRealResendConfig() || !resendApiKey || !fromEmail) {
     await writePreviewEmail(record, content);
@@ -194,7 +243,7 @@ export async function sendPurchaseEmail(record: DeliveryRecord) {
   const fallbackFrom = `${fromName} <${fallbackFromEmail}>`;
 
   try {
-    const result = await sendViaResend({
+    const result = await sendViaResendWithRetry({
       resendApiKey,
       from: primaryFrom,
       to: [record.customerEmail],
@@ -207,6 +256,8 @@ export async function sendPurchaseEmail(record: DeliveryRecord) {
     return {
       mode: "resend" as const,
       id: result.id,
+      status: result.status,
+      providerResponse: result.result,
       from: primaryFrom,
       replyTo
     };
@@ -221,7 +272,7 @@ export async function sendPurchaseEmail(record: DeliveryRecord) {
       throw error;
     }
 
-    const fallbackResult = await sendViaResend({
+    const fallbackResult = await sendViaResendWithRetry({
       resendApiKey,
       from: fallbackFrom,
       to: [record.customerEmail],
@@ -234,6 +285,8 @@ export async function sendPurchaseEmail(record: DeliveryRecord) {
     return {
       mode: "resend-fallback" as const,
       id: fallbackResult.id,
+      status: fallbackResult.status,
+      providerResponse: fallbackResult.result,
       from: fallbackFrom,
       replyTo
     };

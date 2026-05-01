@@ -23,6 +23,8 @@ namespace NinjaTrader.NinjaScript.AddOns
         private const string ProductDisplayName = "GG Daily Account Lock AddOn";
         private const string LocalLicenseServerUrl = "http://127.0.0.1:3000/api/verify-license";
         private const string ProductionLicenseServerUrl = "https://goodgainsindicators.com/api/verify-license";
+        private const string EmptyLicenseMessage = "Enter License Key";
+        private const string InvalidLicenseMessage = "Invalid License";
         private const int LicenseRequestTimeoutMs = 5000;
         private readonly Dictionary<string, LockState> lockStates = new Dictionary<string, LockState>(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<Account> subscribedAccounts = new HashSet<Account>();
@@ -51,7 +53,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                 Name = "DailyAccountLockAddOn";
                 Description = "Manual daily trading lock for selected NinjaTrader accounts.";
                 LicenseKey = string.Empty;
-                UseLocalLicenseServer = true;
+                UseLocalLicenseServer = false;
                 licenseValidated = false;
                 licenseIsValid = false;
                 licenseStatusMessage = string.Empty;
@@ -652,7 +654,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             licenseStatusMessage = isValid
                 ? "License active for GG Daily Account Lock AddOn."
                 : (string.IsNullOrWhiteSpace(message)
-                    ? "Invalid or missing license key for GG Daily Account Lock AddOn."
+                    ? InvalidLicenseMessage
                     : message);
 
             window?.RefreshRows();
@@ -672,7 +674,7 @@ namespace NinjaTrader.NinjaScript.AddOns
 
             if (string.IsNullOrWhiteSpace(normalizedLicenseKey))
             {
-                SetLicenseState(false, "Invalid or missing license key for GG Daily Account Lock AddOn.");
+                SetLicenseState(false, EmptyLicenseMessage);
                 return;
             }
 
@@ -712,13 +714,13 @@ namespace NinjaTrader.NinjaScript.AddOns
 
                     SetLicenseState(
                         isValid,
-                        isValid ? "License active for GG Daily Account Lock AddOn." : "Invalid or missing license key for GG Daily Account Lock AddOn.");
+                        isValid ? "License active for GG Daily Account Lock AddOn." : InvalidLicenseMessage);
                 }
             }
             catch (Exception ex)
             {
                 Print(ProductDisplayName + " license validation failed: " + ex.Message);
-                SetLicenseState(false, "Invalid or missing license key for GG Daily Account Lock AddOn.");
+                SetLicenseState(false, InvalidLicenseMessage);
             }
         }
 
@@ -741,7 +743,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         {
             ValidateLicenseStatus();
             return string.IsNullOrWhiteSpace(licenseStatusMessage)
-                ? "Invalid or missing license key for GG Daily Account Lock AddOn."
+                ? InvalidLicenseMessage
                 : licenseStatusMessage;
         }
 
