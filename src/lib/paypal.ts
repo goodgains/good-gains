@@ -53,6 +53,7 @@ type PayPalCaptureOrderResponse = {
 type PayPalCustomIdPayload = {
   productName: string;
   couponCode?: string;
+  customerEmail?: string;
 };
 
 function getPayPalApiBaseUrl() {
@@ -94,12 +95,14 @@ export function parsePayPalCustomId(customId?: string | null) {
 
     return {
       productName: parsed.productName,
-      couponCode: parsed.couponCode || null
+      couponCode: parsed.couponCode || null,
+      customerEmail: parsed.customerEmail?.trim().toLowerCase() || null
     };
   } catch {
     return {
       productName: customId,
-      couponCode: null
+      couponCode: null,
+      customerEmail: null
     };
   }
 }

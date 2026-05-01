@@ -145,6 +145,45 @@ async function writePreviewEmail(record: DeliveryRecord, content: { subject: str
   }
 }
 
+function buildSupportMessageContent(input: {
+  name: string;
+  email: string;
+  topic: string;
+  message: string;
+}) {
+  const safeName = input.name.trim() || "Unknown";
+  const safeEmail = input.email.trim().toLowerCase();
+  const safeTopic = input.topic.trim() || "General support";
+  const safeMessage = input.message.trim();
+
+  return {
+    subject: `Support request: ${safeTopic}`,
+    text: [
+      `Name: ${safeName}`,
+      `Email: ${safeEmail}`,
+      `Topic: ${safeTopic}`,
+      "",
+      safeMessage
+    ].join("\n"),
+    html: `
+      <div style="background:#09090b;padding:32px;font-family:Arial,sans-serif;color:#e4e4e7;">
+        <div style="max-width:720px;margin:0 auto;border:1px solid rgba(255,255,255,0.08);border-radius:24px;background:#111115;padding:32px;">
+          <p style="margin:0 0 12px;font-size:12px;letter-spacing:0.28em;text-transform:uppercase;color:#6ee7b7;">Support Message</p>
+          <h1 style="margin:0 0 18px;font-size:28px;line-height:1.2;color:#ffffff;">${escapeHtml(safeTopic)}</h1>
+          <div style="border:1px solid rgba(255,255,255,0.08);border-radius:20px;background:#09090b;padding:20px;margin-bottom:24px;">
+            <p style="margin:0 0 6px;font-size:14px;color:#d4d4d8;"><strong>Name:</strong> ${escapeHtml(safeName)}</p>
+            <p style="margin:0;font-size:14px;color:#d4d4d8;"><strong>Email:</strong> ${escapeHtml(safeEmail)}</p>
+          </div>
+          <div style="border:1px solid rgba(255,255,255,0.08);border-radius:20px;background:#09090b;padding:20px;">
+            <p style="margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:0.24em;color:#a1a1aa;">Message</p>
+            <p style="margin:0;font-size:15px;line-height:1.8;color:#e4e4e7;white-space:pre-wrap;">${escapeHtml(safeMessage)}</p>
+          </div>
+        </div>
+      </div>
+    `
+  };
+}
+
 async function sendViaResend(input: {
   resendApiKey: string;
   from: string;
@@ -331,6 +370,100 @@ export async function sendPurchaseEmail(record: DeliveryRecord) {
       providerResponse: fallbackResult.result,
       from: fallbackFrom,
       replyTo
+    };
+  }
+}
+
+export async function sendSupportMessageEmail(input: {
+  name: string;
+  email: string;
+  topic: string;
+  message: string;
+}) {
+  const content = buildSupportMessageContent(input);
+  const resendApiKey = process.env.RESEND_API_KEY?.trim();
+  const fromEmail = resolveConfiguredEmail(process.env.RESEND_FROM_EMAIL);
+  const fallbackFromEmail = resolveConfiguredEmail(process.env.RESEND_FALLBACK_FROM_EMAIL);
+  const fromName = siteConfig.emailFromName;
+  const to = siteConfig.supportEmail;
+  const replyTo = input.email.trim().toLowerCase();
+
+  console.log("Preparing support message email", {
+    customerEmail: replyTo,
+    to,
+    fromEmail,
+    fallbackFromEmail,
+    replyTo,
+    topic: input.topic
+  });
+
+  if (!hasRealResendConfig() || !resendApiKey || !fromEmail) {
+    throw new Error(
+      `Email provider is not configured. Required env vars: RESEND_API_KEY and RESEND_FROM_EMAIL. Current from="${fromEmail ?? ""}" replyTo="${replyTo}".`
+    );
+  }
+
+  const primaryFrom = `${fromName} <${fromEmail}>`;
+  const fallbackFrom = fallbackFromEmail ? `${fromName} <${fallbackFromEmail}>` : null;
+
+  try {
+    const result = await sendViaResendWithRetry({
+      resendApiKey,
+      from: primaryFrom,
+      to: [to],
+      replyTo,
+      subject: content.subject,
+      html: content.html,
+      text: content.text
+    });
+
+    return {
+      mode: "resend" as const,
+      id: result.id,
+      status: result.status,
+      providerResponse: result.result,
+      from: primaryFrom,
+      replyTo,
+      to
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const shouldRetryWithFallback =
+      Boolean(fallbackFromEmail && fallbackFrom) &&
+      !fallbackFrom!.toLowerCase().includes(fromEmail.toLowerCase()) &&
+      errorMessage.toLowerCase().includes("domain is not verified");
+
+    if (!shouldRetryWithFallback) {
+      throw error;
+    }
+
+    console.warn("Retrying support email with fallback sender", {
+      to,
+      customerEmail: replyTo,
+      primaryFrom,
+      fallbackFrom,
+      replyTo,
+      error: errorMessage
+    });
+
+    const fallbackResult = await sendViaResendWithRetry({
+      resendApiKey,
+      from: fallbackFrom!,
+      to: [to],
+      replyTo,
+      subject: content.subject,
+      html: content.html,
+      text: content.text
+    });
+
+    return {
+      mode: "resend-fallback" as const,
+      id: fallbackResult.id,
+      status: fallbackResult.status,
+      providerResponse: fallbackResult.result,
+      from: fallbackFrom!,
+      replyTo,
+      to
     };
   }
 }

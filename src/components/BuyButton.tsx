@@ -111,7 +111,7 @@ export function BuyButton({
   async function handleCheckout() {
     const isFreeCouponCheckout = couponStatus?.valid && couponStatus.finalPrice === 0;
 
-    if (isFreeCouponCheckout && !EMAIL_PATTERN.test(customerEmail.trim())) {
+    if (!EMAIL_PATTERN.test(customerEmail.trim())) {
       setError("Please enter a valid email address.");
       return;
     }
@@ -202,6 +202,19 @@ export function BuyButton({
       ) : null}
       {showCoupon ? (
         <>
+          <div className="mx-auto w-full max-w-sm space-y-2 rounded-[1.25rem] border border-white/6 bg-black/20 px-3 py-3 text-left">
+            <label className="text-[11px] font-medium text-zinc-400/85" htmlFor={`${productId}-delivery-email`}>
+              Email for delivery
+            </label>
+            <input
+              id={`${productId}-delivery-email`}
+              type="email"
+              value={customerEmail}
+              onChange={(event) => setCustomerEmail(event.target.value)}
+              placeholder="you@example.com"
+              className="relative z-20 w-full pointer-events-auto rounded-full border border-white/8 bg-black/30 px-3 py-2 text-xs text-white outline-none transition placeholder:text-zinc-500 focus:border-emerald-400/30"
+            />
+          </div>
           <div className="space-y-2 pt-1 text-center">
             <button
               type="button"
@@ -243,21 +256,6 @@ export function BuyButton({
                       : `Coupon applied. New price: $${couponStatus.finalPrice?.toFixed(2)}`
                     : couponStatus.error || "Invalid coupon code."}
                 </p>
-              ) : null}
-              {couponStatus?.valid && couponStatus.finalPrice === 0 ? (
-                <div className="space-y-2 pt-1">
-                  <label className="text-[11px] font-medium text-zinc-400/85" htmlFor={`${productId}-coupon-email`}>
-                    Email for delivery
-                  </label>
-                  <input
-                    id={`${productId}-coupon-email`}
-                    type="email"
-                    value={customerEmail}
-                    onChange={(event) => setCustomerEmail(event.target.value)}
-                    placeholder="you@example.com"
-                    className="relative z-20 w-full pointer-events-auto rounded-full border border-white/8 bg-black/30 px-3 py-1.5 text-xs text-white outline-none transition placeholder:text-zinc-500 focus:border-emerald-400/30"
-                  />
-                </div>
               ) : null}
             </div>
           ) : null}

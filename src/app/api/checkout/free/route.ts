@@ -94,6 +94,7 @@ export async function POST(request: Request) {
     }
 
     console.log("Free coupon email send attempt", {
+      customerEmail: record.customerEmail,
       to: record.customerEmail,
       product: record.purchasedProductName,
       licenseKey: record.licenseKey
@@ -102,6 +103,7 @@ export async function POST(request: Request) {
     try {
       const emailResult = await sendPurchaseEmail(record);
       console.log("Free coupon email sent successfully", {
+        customerEmail: record.customerEmail,
         provider: emailResult.mode,
         messageId: emailResult.id,
         status: "status" in emailResult ? emailResult.status : null,
@@ -142,6 +144,7 @@ export async function POST(request: Request) {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("Free coupon email failed", {
+        customerEmail: record.customerEmail,
         to: record.customerEmail,
         product: record.purchasedProductName,
         licenseKey: record.licenseKey,

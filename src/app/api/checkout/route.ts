@@ -11,15 +11,22 @@ type CheckoutBody = {
   customerEmail?: string;
 };
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function POST(request: Request) {
   const body = (await request.json()) as CheckoutBody;
   const productName = body.productName?.trim();
   const productId = body.productId?.trim();
   const priceEnvName = body.priceIdEnv?.trim();
   const couponCode = normalizeCouponCode(body.couponCode);
+  const customerEmail = body.customerEmail?.trim().toLowerCase();
 
-  if (!productName || !priceEnvName || !productId) {
+  if (!productName || !priceEnvName || !productId || !customerEmail) {
     return NextResponse.json({ error: "Missing checkout product data." }, { status: 400 });
+  }
+
+  if (!EMAIL_PATTERN.test(customerEmail)) {
+    return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
   }
 
   try {
@@ -82,7 +89,8 @@ export async function POST(request: Request) {
     const order = await createPayPalOrder({
       customId: encodePayPalCustomId({
         productName,
-        couponCode: appliedCouponCode || undefined
+        couponCode: appliedCouponCode || undefined,
+        customerEmail
       }),
       description: matchedProduct.description,
       amount: finalPrice

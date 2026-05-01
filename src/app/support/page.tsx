@@ -1,4 +1,5 @@
 import { PageHero } from "@/components/PageHero";
+import { SupportContactForm } from "@/components/SupportContactForm";
 import { SupportMessagePanel } from "@/components/SupportMessagePanel";
 import { Container } from "@/components/ui/Container";
 import { siteConfig } from "@/lib/site";
@@ -85,32 +86,7 @@ export default async function SupportPage({
                 </div>
               ) : null}
             </div>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {["Name", "Email", "Topic", "Message"].map((field) => (
-                <div
-                  key={field}
-                  className={`rounded-2xl border border-white/10 bg-zinc-950/70 px-4 py-4 text-sm text-zinc-500 ${
-                    field === "Message" ? "min-h-32 md:col-span-2" : ""
-                  }`}
-                >
-                  {field}
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm leading-7 text-zinc-400">
-                Prefer direct email? Write to{" "}
-                <a href={`mailto:${siteConfig.supportEmail}`} className="font-medium text-emerald-300">
-                  {siteConfig.supportEmail}
-                </a>
-                .
-              </p>
-              <a href={`mailto:${siteConfig.supportEmail}`} className="inline-flex w-full justify-center rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/5 sm:w-auto">
-                Send message
-              </a>
-            </div>
+            <SupportContactForm selectedTopic={selectedTopic} supportEmail={siteConfig.supportEmail} />
           </SupportMessagePanel>
         </Container>
       </section>

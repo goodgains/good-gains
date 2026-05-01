@@ -40,8 +40,10 @@ export async function GET(request: Request) {
     const customIdPayload = parsePayPalCustomId(customId);
     const productName = customIdPayload?.productName;
     const couponCode = customIdPayload?.couponCode;
+    const deliveryEmail = customIdPayload?.customerEmail;
     const shouldCountCoupon = Boolean(couponCode) && order.status !== "COMPLETED";
     const customerEmail =
+      deliveryEmail ??
       refreshedOrder.payer?.email_address ??
       order.payer?.email_address ??
       finalOrder.payer?.email_address;
@@ -84,6 +86,7 @@ export async function GET(request: Request) {
     }
 
     console.log("PayPal email send attempt", {
+      customerEmail: record.customerEmail,
       to: record.customerEmail,
       product: record.purchasedProductName,
       licenseKey: record.licenseKey
