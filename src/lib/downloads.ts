@@ -69,9 +69,9 @@ export const productDownloads: DownloadRelease[] = [
   {
     slug: "gg-stochastic-momentum-index",
     name: "GG SMI Precision",
-    version: "v1.0.0",
-    fileName: "GG-SMI-Precision-v1.0.0.zip",
-    filePath: "/downloads/GG-SMI-Precision-v1.0.0.zip",
+    version: "v1.0",
+    fileName: "GG-SMI-Precision-v1.0.zip",
+    filePath: "/downloads/GG-SMI-Precision-v1.0.zip",
     updatedAt: "April 26, 2026",
     installNotes: [
       "Import the ZIP into NinjaTrader 8 using Tools > Import > NinjaScript Add-On.",
