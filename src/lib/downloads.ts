@@ -90,8 +90,8 @@ export const bundleDownload: DownloadRelease = {
   slug: "bundle",
   name: bundle.name,
   version: "v2026.04",
-  fileName: "Good-Gains-Trading-Toolkit-v2026.04.zip",
-  filePath: "/downloads/Good-Gains-Trading-Toolkit-v2026.04.zip",
+  fileName: "Separate product downloads",
+  filePath: "/downloads",
   updatedAt: "April 26, 2026",
   installNotes: [
     "Import each included ZIP into NinjaTrader 8 using Tools > Import > NinjaScript Add-On.",
