@@ -1,7 +1,7 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { syncLicenseRecord } from "@/lib/licenses";
+import { createLicenseKey, verifyProductLicense } from "@/lib/licenses";
 import { bundle, getProductBySlug, products } from "@/lib/products";
 import { getReleaseBySlug } from "@/lib/downloads";
 import { getBaseUrl } from "@/lib/paypal";
@@ -25,59 +25,190 @@ export type DeliveryRecord = {
   updatedAt: string;
 };
 
+type StatelessDeliveryPayload = {
+  v: 1;
+  id: string;
+  sessionId: string;
+  provider: DeliveryRecord["paymentProvider"];
+  paymentStatus: DeliveryRecord["paymentStatus"];
+  email: string;
+  name: string;
+  productName: string;
+  slugs: string[];
+  licenseKey: string;
+  expiresAt: string | null;
+  maxDownloads: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 const dataDir = path.join(process.cwd(), "data");
 const recordsPath = path.join(dataDir, "delivery-records.json");
 const DEFAULT_TOKEN_EXPIRATION_HOURS = 48;
 const DEFAULT_MAX_DOWNLOADS = 10;
+const STATELESS_DELIVERY_PREFIX = "GGD1-";
 export const DOWNLOAD_ACCESS_COOKIE = "ggi_download_access";
 
-async function ensureDataFile() {
-  await fs.mkdir(dataDir, { recursive: true });
+function normalizeEmail(email?: string | null) {
+  return email?.trim().toLowerCase() ?? "";
+}
+
+function toBase64Url(value: string) {
+  return Buffer.from(value, "utf8").toString("base64url");
+}
+
+function fromBase64Url(value: string) {
+  return Buffer.from(value, "base64url").toString("utf8");
+}
+
+function getDeliveryTokenSecret() {
+  return (
+    process.env.DELIVERY_TOKEN_SECRET ||
+    process.env.DOWNLOAD_ACCESS_SECRET ||
+    process.env.PAYPAL_CLIENT_SECRET ||
+    "dev-delivery-secret"
+  );
+}
+
+function signDeliveryPayload(payloadEncoded: string) {
+  return crypto
+    .createHmac("sha256", getDeliveryTokenSecret())
+    .update(payloadEncoded)
+    .digest("base64url");
+}
+
+function buildStatelessDeliveryToken(payload: StatelessDeliveryPayload) {
+  const encodedPayload = toBase64Url(JSON.stringify(payload));
+  return `${STATELESS_DELIVERY_PREFIX}${encodedPayload}.${signDeliveryPayload(encodedPayload)}`;
+}
+
+function buildStatelessDeliveryPayload(record: DeliveryRecord): StatelessDeliveryPayload {
+  return {
+    v: 1,
+    id: record.id,
+    sessionId: record.stripeSessionId,
+    provider: record.paymentProvider,
+    paymentStatus: record.paymentStatus,
+    email: record.customerEmail,
+    name: record.customerName,
+    productName: record.purchasedProductName,
+    slugs: record.purchasedSlugs,
+    licenseKey: record.licenseKey,
+    expiresAt: record.expiresAt,
+    maxDownloads: record.maxDownloads,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt
+  };
+}
+
+function parseStatelessDeliveryToken(token: string) {
+  if (!token.startsWith(STATELESS_DELIVERY_PREFIX)) {
+    return null;
+  }
+
+  const encoded = token.slice(STATELESS_DELIVERY_PREFIX.length);
+  const separatorIndex = encoded.lastIndexOf(".");
+
+  if (separatorIndex <= 0) {
+    return null;
+  }
+
+  const payloadEncoded = encoded.slice(0, separatorIndex);
+  const signature = encoded.slice(separatorIndex + 1);
+
+  if (!payloadEncoded || !signature) {
+    return null;
+  }
+
+  const expectedSignature = signDeliveryPayload(payloadEncoded);
+  const expectedBuffer = Buffer.from(expectedSignature, "utf8");
+  const actualBuffer = Buffer.from(signature, "utf8");
+
+  if (
+    expectedBuffer.length !== actualBuffer.length ||
+    !crypto.timingSafeEqual(expectedBuffer, actualBuffer)
+  ) {
+    return null;
+  }
 
   try {
-    await fs.access(recordsPath);
+    const payload = JSON.parse(fromBase64Url(payloadEncoded)) as StatelessDeliveryPayload;
+
+    if (
+      payload?.v !== 1 ||
+      !payload.id ||
+      !payload.sessionId ||
+      !payload.email ||
+      !payload.productName ||
+      !Array.isArray(payload.slugs) ||
+      payload.slugs.length === 0 ||
+      !payload.licenseKey ||
+      !payload.createdAt ||
+      !payload.updatedAt
+    ) {
+      return null;
+    }
+
+    const record: DeliveryRecord = {
+      id: payload.id,
+      token,
+      stripeSessionId: payload.sessionId,
+      paymentProvider: payload.provider,
+      paymentStatus: payload.paymentStatus,
+      customerEmail: normalizeEmail(payload.email),
+      customerName: payload.name || "Trader",
+      purchasedProductName: payload.productName,
+      purchasedSlugs: payload.slugs,
+      licenseKey: payload.licenseKey,
+      status: "active",
+      expiresAt: payload.expiresAt,
+      maxDownloads: payload.maxDownloads || DEFAULT_MAX_DOWNLOADS,
+      downloadCount: 0,
+      createdAt: payload.createdAt,
+      updatedAt: payload.updatedAt
+    };
+
+    return record;
   } catch {
-    await fs.writeFile(recordsPath, "[]", "utf8");
+    return null;
   }
 }
 
-async function readRecords() {
-  await ensureDataFile();
-  const raw = await fs.readFile(recordsPath, "utf8");
-  const records = JSON.parse(raw.replace(/^\uFEFF/, "")) as Partial<DeliveryRecord>[];
+async function readLegacyRecords() {
+  try {
+    const raw = await fs.readFile(recordsPath, "utf8");
+    const records = JSON.parse(raw.replace(/^\uFEFF/, "")) as Partial<DeliveryRecord>[];
 
-  return records.map((record) => {
-    const paymentProvider =
-      record.paymentProvider ??
-      (record.stripeSessionId?.startsWith("demo_") ? "demo" : "paypal");
-    const paymentStatus =
-      record.paymentStatus ??
-      (record.stripeSessionId?.startsWith("demo_") ? "PENDING" : "COMPLETED");
+    return records.map((record) => {
+      const paymentProvider =
+        record.paymentProvider ??
+        (record.stripeSessionId?.startsWith("demo_") ? "demo" : "paypal");
+      const paymentStatus =
+        record.paymentStatus ??
+        (record.stripeSessionId?.startsWith("demo_") ? "PENDING" : "COMPLETED");
 
-    return {
-      id: record.id ?? crypto.randomUUID(),
-      token: record.token ?? generateToken(),
-      stripeSessionId: record.stripeSessionId ?? "",
-      paymentProvider,
-      paymentStatus,
-      customerEmail: record.customerEmail ?? "",
-      customerName: record.customerName ?? "Trader",
-      purchasedProductName: record.purchasedProductName ?? "",
-      purchasedSlugs: record.purchasedSlugs ?? [],
-      licenseKey: record.licenseKey ?? generateLicenseKey(),
-      status: record.status ?? "active",
-      expiresAt: record.expiresAt ?? null,
-      maxDownloads: record.maxDownloads ?? DEFAULT_MAX_DOWNLOADS,
-      downloadCount: record.downloadCount ?? 0,
-      createdAt: record.createdAt ?? new Date().toISOString(),
-      updatedAt: record.updatedAt ?? new Date().toISOString()
-    } satisfies DeliveryRecord;
-  });
-}
-
-async function writeRecords(records: DeliveryRecord[]) {
-  await ensureDataFile();
-  await fs.writeFile(recordsPath, JSON.stringify(records, null, 2), "utf8");
+      return {
+        id: record.id ?? crypto.randomUUID(),
+        token: record.token ?? crypto.randomBytes(24).toString("hex"),
+        stripeSessionId: record.stripeSessionId ?? "",
+        paymentProvider,
+        paymentStatus,
+        customerEmail: normalizeEmail(record.customerEmail),
+        customerName: record.customerName ?? "Trader",
+        purchasedProductName: record.purchasedProductName ?? "",
+        purchasedSlugs: record.purchasedSlugs ?? [],
+        licenseKey: record.licenseKey ?? "",
+        status: record.status ?? "active",
+        expiresAt: record.expiresAt ?? null,
+        maxDownloads: record.maxDownloads ?? DEFAULT_MAX_DOWNLOADS,
+        downloadCount: record.downloadCount ?? 0,
+        createdAt: record.createdAt ?? new Date().toISOString(),
+        updatedAt: record.updatedAt ?? new Date().toISOString()
+      } satisfies DeliveryRecord;
+    });
+  } catch {
+    return [];
+  }
 }
 
 export function resolvePurchase(productName: string) {
@@ -102,23 +233,19 @@ export function resolvePurchase(productName: string) {
   };
 }
 
-function generateLicenseKey() {
-  const raw = crypto.randomBytes(10).toString("hex").toUpperCase();
-  const chunks = raw.match(/.{1,4}/g) ?? [];
-  return `GGI-${chunks.join("-")}`;
-}
-
-function generateToken() {
-  return crypto.randomBytes(24).toString("hex");
-}
-
 export async function getDeliveryByToken(token: string) {
-  const records = await readRecords();
+  const statelessRecord = parseStatelessDeliveryToken(token);
+
+  if (statelessRecord) {
+    return statelessRecord;
+  }
+
+  const records = await readLegacyRecords();
   return records.find((record) => record.token === token) ?? null;
 }
 
 export async function getDeliveryBySessionId(sessionId: string) {
-  const records = await readRecords();
+  const records = await readLegacyRecords();
   return records.find((record) => record.stripeSessionId === sessionId) ?? null;
 }
 
@@ -129,49 +256,45 @@ export async function createDeliveryRecord(input: {
   customerEmail: string;
   customerName?: string | null;
   productName: string;
+  createdAt?: string;
   expiresAt?: string | null;
   maxDownloads?: number;
 }) {
-  const records = await readRecords();
-  const existing = records.find((record) => record.stripeSessionId === input.stripeSessionId);
-
-  if (existing) {
-    if (existing.paymentStatus === "COMPLETED" && existing.status === "active") {
-      await syncLicenseRecord(existing);
-    }
-
-    return existing;
-  }
-
   const resolved = resolvePurchase(input.productName);
-  const timestamp = new Date().toISOString();
+  const customerEmail = normalizeEmail(input.customerEmail);
+  const timestamp = input.createdAt ?? new Date().toISOString();
+  const timestampMs = new Date(timestamp).getTime();
+  const expirationBaseMs = Number.isNaN(timestampMs) ? Date.now() : timestampMs;
+  const expiresAt =
+    input.expiresAt ??
+    new Date(expirationBaseMs + DEFAULT_TOKEN_EXPIRATION_HOURS * 60 * 60 * 1000).toISOString();
+  const licenseKey = createLicenseKey({
+    stripeSessionId: input.stripeSessionId,
+    customerEmail,
+    purchasedSlugs: resolved.slugs,
+    createdAt: timestamp
+  });
+
   const record: DeliveryRecord = {
-    id: crypto.randomUUID(),
-    token: generateToken(),
+    id: crypto.createHash("sha256").update(`${input.stripeSessionId}:${customerEmail}`).digest("hex").slice(0, 24),
+    token: "",
     stripeSessionId: input.stripeSessionId,
     paymentProvider: input.paymentProvider ?? "paypal",
     paymentStatus: input.paymentStatus ?? "COMPLETED",
-    customerEmail: input.customerEmail.trim().toLowerCase(),
+    customerEmail,
     customerName: input.customerName?.trim() || "Trader",
     purchasedProductName: resolved.name,
     purchasedSlugs: resolved.slugs,
-    licenseKey: generateLicenseKey(),
+    licenseKey,
     status: "active",
-    expiresAt:
-      input.expiresAt ??
-      new Date(Date.now() + DEFAULT_TOKEN_EXPIRATION_HOURS * 60 * 60 * 1000).toISOString(),
+    expiresAt,
     maxDownloads: input.maxDownloads ?? DEFAULT_MAX_DOWNLOADS,
     downloadCount: 0,
     createdAt: timestamp,
     updatedAt: timestamp
   };
 
-  records.push(record);
-  await writeRecords(records);
-
-  if (record.paymentStatus === "COMPLETED") {
-    await syncLicenseRecord(record);
-  }
+  record.token = buildStatelessDeliveryToken(buildStatelessDeliveryPayload(record));
 
   return record;
 }
@@ -199,19 +322,19 @@ function getAccessSecret() {
 function buildAccessSignature(token: string, email: string) {
   return crypto
     .createHmac("sha256", getAccessSecret())
-    .update(`${token}:${email.trim().toLowerCase()}`)
+    .update(`${token}:${normalizeEmail(email)}`)
     .digest("hex");
 }
 
 export function createDownloadAccessCookieValue(token: string, email: string) {
-  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedEmail = normalizeEmail(email);
   return `${token}:${normalizedEmail}:${buildAccessSignature(token, normalizedEmail)}`;
 }
 
 function buildTemporaryUnlockSignature(token: string, email: string) {
   return crypto
     .createHmac("sha256", getAccessSecret())
-    .update(`unlock:${token}:${email.trim().toLowerCase()}`)
+    .update(`unlock:${token}:${normalizeEmail(email)}`)
     .digest("hex");
 }
 
@@ -263,7 +386,7 @@ export async function verifyDownloadAccessByEmail(token: string, email: string) 
     return null;
   }
 
-  if (record.customerEmail !== email.trim().toLowerCase()) {
+  if (record.customerEmail !== normalizeEmail(email)) {
     return null;
   }
 
@@ -271,24 +394,16 @@ export async function verifyDownloadAccessByEmail(token: string, email: string) 
 }
 
 export async function incrementDownloadCount(token: string) {
-  const records = await readRecords();
-  const index = records.findIndex((record) => record.token === token);
+  const record = await getValidatedDeliveryByToken(token);
 
-  if (index === -1) {
+  if (!record) {
     return null;
   }
 
-  const record = records[index];
-
-  if (!isDeliveryRecordAccessible(record)) {
-    return null;
-  }
-
-  record.downloadCount += 1;
-  record.updatedAt = new Date().toISOString();
-  records[index] = record;
-  await writeRecords(records);
-  return record;
+  return {
+    ...record,
+    updatedAt: new Date().toISOString()
+  };
 }
 
 export async function verifyLicense(input: {
@@ -296,27 +411,38 @@ export async function verifyLicense(input: {
   email?: string;
   product?: string;
 }) {
-  const records = await readRecords();
-  const normalizedKey = input.licenseKey?.trim().toUpperCase();
-  const normalizedEmail = input.email?.trim().toLowerCase();
-  const normalizedProduct = input.product?.trim().toLowerCase();
+  const normalizedEmail = normalizeEmail(input.email);
+  const normalizedProduct = input.product?.trim();
 
-  if (!normalizedKey || !normalizedEmail || !normalizedProduct) {
+  if (!input.licenseKey?.trim() || !normalizedProduct) {
     return null;
   }
 
-  return (
-    records.find((record) => {
-      if (!isDeliveryRecordAccessible(record)) return false;
-      if (record.licenseKey !== normalizedKey) return false;
-      if (record.customerEmail !== normalizedEmail) return false;
+  const licenseMatch = await verifyProductLicense({
+    licenseKey: input.licenseKey,
+    product: normalizedProduct
+  });
 
-      return record.purchasedSlugs.some((slug) => {
-        const product = getProductBySlug(slug);
-        return product?.name.toLowerCase() === normalizedProduct || slug === normalizedProduct;
-      });
-    }) ?? null
+  if (!licenseMatch) {
+    return null;
+  }
+
+  if (normalizedEmail && normalizeEmail(licenseMatch.customer_email) !== normalizedEmail) {
+    return null;
+  }
+
+  const requestedProduct = normalizedProduct.toLowerCase();
+
+  if (requestedProduct === bundle.name.toLowerCase() || requestedProduct === bundle.slug.toLowerCase()) {
+    return bundle.slug;
+  }
+
+  const product = products.find(
+    (entry) =>
+      entry.slug.toLowerCase() === requestedProduct || entry.name.toLowerCase() === requestedProduct
   );
+
+  return product?.slug ?? null;
 }
 
 export function buildPrivateDownloadUrl(token: string) {

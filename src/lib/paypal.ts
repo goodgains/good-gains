@@ -19,6 +19,8 @@ type PayPalCreateOrderResponse = {
 type PayPalOrderDetailsResponse = {
   id: string;
   status: string;
+  create_time?: string;
+  update_time?: string;
   payer?: {
     email_address?: string;
     name?: {
@@ -34,6 +36,8 @@ type PayPalOrderDetailsResponse = {
 type PayPalCaptureOrderResponse = {
   id: string;
   status: string;
+  create_time?: string;
+  update_time?: string;
   payer?: {
     email_address?: string;
     name?: {

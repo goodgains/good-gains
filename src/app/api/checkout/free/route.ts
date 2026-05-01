@@ -82,7 +82,16 @@ export async function POST(request: Request) {
       productName
     });
 
-    await incrementCouponUsage(validation.coupon.code);
+    try {
+      await incrementCouponUsage(validation.coupon.code);
+    } catch (error) {
+      console.error("Free coupon usage increment failed", {
+        couponCode: validation.coupon.code,
+        productId,
+        customerEmail,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
 
     console.log("Free coupon email send attempt", {
       to: record.customerEmail,

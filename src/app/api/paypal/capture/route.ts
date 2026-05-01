@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import {
   createDeliveryRecord,
   createDownloadAccessCookieValue,
-  DOWNLOAD_ACCESS_COOKIE,
-  getDeliveryBySessionId
+  DOWNLOAD_ACCESS_COOKIE
 } from "@/lib/delivery";
 import { incrementCouponUsage } from "@/lib/coupons";
 import { sendPurchaseEmail } from "@/lib/email";
@@ -41,6 +40,7 @@ export async function GET(request: Request) {
     const customIdPayload = parsePayPalCustomId(customId);
     const productName = customIdPayload?.productName;
     const couponCode = customIdPayload?.couponCode;
+    const shouldCountCoupon = Boolean(couponCode) && order.status !== "COMPLETED";
     const customerEmail =
       refreshedOrder.payer?.email_address ??
       order.payer?.email_address ??
@@ -56,20 +56,31 @@ export async function GET(request: Request) {
       throw new Error("PayPal capture did not return product or customer email.");
     }
 
-    const existingRecord = await getDeliveryBySessionId(finalOrder.id);
-    const shouldCountCoupon = !existingRecord;
-
     const record = await createDeliveryRecord({
       stripeSessionId: finalOrder.id,
       paymentProvider: "paypal",
       paymentStatus: "COMPLETED",
       customerEmail,
       customerName,
-      productName
+      productName,
+      createdAt:
+        refreshedOrder.create_time ??
+        order.create_time ??
+        finalOrder.create_time ??
+        finalOrder.update_time ??
+        new Date().toISOString()
     });
 
     if (couponCode && shouldCountCoupon) {
-      await incrementCouponUsage(couponCode);
+      try {
+        await incrementCouponUsage(couponCode);
+      } catch (error) {
+        console.error("Coupon usage increment failed", {
+          couponCode,
+          orderId: finalOrder.id,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
     }
 
     try {

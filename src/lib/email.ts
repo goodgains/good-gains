@@ -122,14 +122,18 @@ function hasRealResendConfig() {
 }
 
 async function writePreviewEmail(record: DeliveryRecord, content: { subject: string; text: string }) {
-  const previewDir = path.join(process.cwd(), "data", "email-previews");
-  await fs.mkdir(previewDir, { recursive: true });
-  const previewPath = path.join(previewDir, `${record.id}.txt`);
-  await fs.writeFile(
-    previewPath,
-    `TO: ${record.customerEmail}\nSUBJECT: ${content.subject}\n\n${content.text}`,
-    "utf8"
-  );
+  try {
+    const previewDir = path.join(process.cwd(), "data", "email-previews");
+    await fs.mkdir(previewDir, { recursive: true });
+    const previewPath = path.join(previewDir, `${record.id}.txt`);
+    await fs.writeFile(
+      previewPath,
+      `TO: ${record.customerEmail}\nSUBJECT: ${content.subject}\n\n${content.text}`,
+      "utf8"
+    );
+  } catch {
+    // Ignore preview write failures on read-only production file systems.
+  }
 }
 
 export async function sendPurchaseEmail(record: DeliveryRecord) {
