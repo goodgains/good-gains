@@ -4,8 +4,6 @@ import { DeliveryRecord, buildPrivateDownloadUrl, getDeliveryDownloadData } from
 import { bundleDownload } from "@/lib/downloads";
 import { siteConfig } from "@/lib/site";
 
-export const TEST_DELIVERY_EMAIL = "goodgainsindicators@gmail.com";
-
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -116,10 +114,7 @@ function hasRealResendConfig() {
     return false;
   }
 
-  if (
-    resendApiKey === "re_replace_me" ||
-    fromEmail === "orders@example.com"
-  ) {
+  if (resendApiKey === "re_replace_me") {
     return false;
   }
 
@@ -141,10 +136,11 @@ export async function sendPurchaseEmail(record: DeliveryRecord) {
   const content = buildEmailContent(record);
   const resendApiKey = process.env.RESEND_API_KEY?.trim();
   const fromEmail = process.env.RESEND_FROM_EMAIL?.trim();
-  const emailRecipient = TEST_DELIVERY_EMAIL;
+  const fromName = siteConfig.emailFromName;
   const payload = {
-    from: fromEmail,
-    to: [emailRecipient],
+    from: `${fromName} <${fromEmail}>`,
+    to: [record.customerEmail],
+    reply_to: siteConfig.supportEmail,
     subject: content.subject,
     html: content.html,
     text: content.text
