@@ -7,7 +7,7 @@ import {
   hasDownloadAccess,
   incrementDownloadCount
 } from "@/lib/delivery";
-import { bundleDownload, getReleaseBySlug } from "@/lib/downloads";
+import { getReleaseBySlug } from "@/lib/downloads";
 
 export async function GET(
   request: Request,
@@ -33,13 +33,20 @@ export async function GET(
     return NextResponse.json({ error: "Email verification is required before downloading." }, { status: 403 });
   }
 
-  const hasAccess = slug === "bundle" ? record.purchasedSlugs.length > 1 : record.purchasedSlugs.includes(slug);
+  if (slug === "bundle") {
+    return NextResponse.json(
+      { error: "Bundle purchases are delivered as separate product downloads." },
+      { status: 404 }
+    );
+  }
+
+  const hasAccess = record.purchasedSlugs.includes(slug);
 
   if (!hasAccess) {
     return NextResponse.json({ error: "This download is not included in the purchase." }, { status: 403 });
   }
 
-  const release = slug === "bundle" ? bundleDownload : getReleaseBySlug(slug);
+  const release = getReleaseBySlug(slug);
 
   if (!release) {
     return NextResponse.json({ error: "Download release not found." }, { status: 404 });

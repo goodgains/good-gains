@@ -99,12 +99,12 @@ export default async function DownloadsPage({
                 <p className="text-xs font-semibold uppercase tracking-[0.26em] text-emerald-300">Bundle Download</p>
                 <h2 className="text-3xl font-semibold text-white">{bundleDownload.name}</h2>
                 <p className="text-sm leading-7 text-zinc-300">
-                  Download the complete toolkit package with the latest versions of all included products in one file.
+                  Bundle customers receive one private access page with four separate product downloads and one shared license key.
                 </p>
                 <p className="text-sm text-zinc-400">Version {bundleDownload.version} • Updated {bundleDownload.updatedAt}</p>
               </div>
               <div className="rounded-[1.5rem] border border-white/10 bg-black/30 px-5 py-4 text-sm text-zinc-300">
-                Bundle access is delivered privately after payment.
+                Bundle access is delivered privately after payment with separate downloads for each included tool.
               </div>
             </div>
 

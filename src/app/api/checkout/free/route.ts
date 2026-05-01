@@ -104,6 +104,8 @@ export async function POST(request: Request) {
       console.log("Free coupon email sent successfully", {
         provider: emailResult.mode,
         messageId: "id" in emailResult ? emailResult.id : null,
+        from: "from" in emailResult ? emailResult.from : null,
+        replyTo: "replyTo" in emailResult ? emailResult.replyTo : null,
         to: record.customerEmail,
         product: record.purchasedProductName,
         licenseKey: record.licenseKey

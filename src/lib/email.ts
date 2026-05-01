@@ -136,46 +136,108 @@ async function writePreviewEmail(record: DeliveryRecord, content: { subject: str
   }
 }
 
-export async function sendPurchaseEmail(record: DeliveryRecord) {
-  const content = buildEmailContent(record);
-  const resendApiKey = process.env.RESEND_API_KEY?.trim();
-  const fromEmail = process.env.RESEND_FROM_EMAIL?.trim();
-  const fromName = siteConfig.emailFromName;
-  const payload = {
-    from: `${fromName} <${fromEmail}>`,
-    to: [record.customerEmail],
-    reply_to: siteConfig.supportEmail,
-    subject: content.subject,
-    html: content.html,
-    text: content.text
-  };
-
-  if (!hasRealResendConfig() || !resendApiKey || !fromEmail) {
-    await writePreviewEmail(record, content);
-    throw new Error(
-      "Email provider is not configured. Add a real RESEND_API_KEY and RESEND_FROM_EMAIL to send customer emails."
-    );
-  }
-
+async function sendViaResend(input: {
+  resendApiKey: string;
+  from: string;
+  to: string[];
+  replyTo: string;
+  subject: string;
+  html: string;
+  text: string;
+}) {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${resendApiKey}`,
+      Authorization: `Bearer ${input.resendApiKey}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify({
+      from: input.from,
+      to: input.to,
+      reply_to: input.replyTo,
+      subject: input.subject,
+      html: input.html,
+      text: input.text
+    })
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Resend email failed: ${errorText}`);
+    throw new Error(
+      `Resend email failed for from="${input.from}" replyTo="${input.replyTo}". Response: ${errorText}`
+    );
   }
 
   const result = (await response.json().catch(() => null)) as { id?: string } | null;
+
   return {
-    mode: "resend" as const,
     id: result?.id ?? null
   };
+}
+
+export async function sendPurchaseEmail(record: DeliveryRecord) {
+  const content = buildEmailContent(record);
+  const resendApiKey = process.env.RESEND_API_KEY?.trim();
+  const fromEmail = process.env.RESEND_FROM_EMAIL?.trim();
+  const fallbackFromEmail = process.env.RESEND_FALLBACK_FROM_EMAIL?.trim();
+  const fromName = siteConfig.emailFromName;
+  const replyTo = siteConfig.supportEmail;
+
+  if (!hasRealResendConfig() || !resendApiKey || !fromEmail) {
+    await writePreviewEmail(record, content);
+    throw new Error(
+      `Email provider is not configured. Required env vars: RESEND_API_KEY and RESEND_FROM_EMAIL. Current from="${fromEmail ?? ""}" replyTo="${replyTo}".`
+    );
+  }
+
+  const primaryFrom = `${fromName} <${fromEmail}>`;
+  const fallbackFrom = `${fromName} <${fallbackFromEmail}>`;
+
+  try {
+    const result = await sendViaResend({
+      resendApiKey,
+      from: primaryFrom,
+      to: [record.customerEmail],
+      replyTo,
+      subject: content.subject,
+      html: content.html,
+      text: content.text
+    });
+
+    return {
+      mode: "resend" as const,
+      id: result.id,
+      from: primaryFrom,
+      replyTo
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const shouldRetryWithFallback =
+      Boolean(fallbackFromEmail) &&
+      !fallbackFrom.toLowerCase().includes(fromEmail.toLowerCase()) &&
+      errorMessage.toLowerCase().includes("domain is not verified");
+
+    if (!shouldRetryWithFallback) {
+      throw error;
+    }
+
+    const fallbackResult = await sendViaResend({
+      resendApiKey,
+      from: fallbackFrom,
+      to: [record.customerEmail],
+      replyTo,
+      subject: content.subject,
+      html: content.html,
+      text: content.text
+    });
+
+    return {
+      mode: "resend-fallback" as const,
+      id: fallbackResult.id,
+      from: fallbackFrom,
+      replyTo
+    };
+  }
 }
 
 

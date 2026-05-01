@@ -95,13 +95,13 @@ export const bundleDownload: DownloadRelease = {
   updatedAt: "April 26, 2026",
   installNotes: [
     "Import each included ZIP into NinjaTrader 8 using Tools > Import > NinjaScript Add-On.",
-    "Open the tools you purchased and keep the issued license key for activation.",
-    "Use the same private download page any time you need the latest version again."
+    "Use the same bundle license key to activate all four included Good Gains tools.",
+    "Return to the same private download page any time you need the latest product files again."
   ],
   changelog: [
-    "Packaged the latest versions of all four Good Gains tools into one delivery bundle.",
+    "Bundle delivery now provides four separate product downloads on one private access page.",
     "Updated included files to match the newest individual releases listed on this page.",
-    "Prepared the bundle package for ongoing re-download access as future updates ship."
+    "Prepared the bundle access flow for ongoing re-download delivery as future updates ship."
   ]
 };
 
