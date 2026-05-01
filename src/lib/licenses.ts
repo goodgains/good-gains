@@ -22,10 +22,18 @@ type StatelessLicensePayload = {
   createdAt: string;
 };
 
+type ShortLicenseScopeCode = "R" | "S" | "D" | "H" | "B";
+
 const dataDir = path.join(process.cwd(), "data");
 const licensesFilePath = path.join(dataDir, "licenses.json");
 const BUNDLE_ID = "good-gains-trading-toolkit";
-const STATELESS_LICENSE_PREFIX = "GGI2-";
+const SHORT_LICENSE_PREFIX = "GGI-";
+const LEGACY_STATELESS_LICENSE_PREFIX = "GGI2-";
+const SHORT_LICENSE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const SHORT_LICENSE_GROUP_SIZE = 4;
+const SHORT_LICENSE_GROUP_COUNT = 4;
+const SHORT_LICENSE_NONCE_LENGTH = 8;
+const SHORT_LICENSE_SIGNATURE_LENGTH = 7;
 const TEST_LICENSE_RECORD: LicenseRecord = {
   license_key: "GGI-TEST-1234",
   customer_email: "test@example.com",
@@ -46,6 +54,128 @@ function toBase64Url(value: string) {
 
 function fromBase64Url(value: string) {
   return Buffer.from(value, "base64url").toString("utf8");
+}
+
+function encodeBase32(buffer: Buffer) {
+  let bits = 0;
+  let value = 0;
+  let output = "";
+
+  for (const byte of buffer) {
+    value = (value << 8) | byte;
+    bits += 8;
+
+    while (bits >= 5) {
+      output += SHORT_LICENSE_ALPHABET[(value >>> (bits - 5)) & 31];
+      bits -= 5;
+    }
+  }
+
+  if (bits > 0) {
+    output += SHORT_LICENSE_ALPHABET[(value << (5 - bits)) & 31];
+  }
+
+  return output;
+}
+
+function formatShortLicenseBody(body: string) {
+  const groups: string[] = [];
+
+  for (let index = 0; index < body.length; index += SHORT_LICENSE_GROUP_SIZE) {
+    groups.push(body.slice(index, index + SHORT_LICENSE_GROUP_SIZE));
+  }
+
+  return `${SHORT_LICENSE_PREFIX}${groups.join("-")}`;
+}
+
+function getScopeCodeForSlugs(slugs: string[]): ShortLicenseScopeCode {
+  const normalizedSlugs = [...new Set(slugs.map((slug) => slug.trim().toLowerCase()))].sort();
+
+  if (normalizedSlugs.length > 1) {
+    return "B";
+  }
+
+  const [slug] = normalizedSlugs;
+
+  switch (slug) {
+    case "gg-rr-trade-panel":
+      return "R";
+    case "gg-stochastic-momentum-index":
+      return "S";
+    case "daily-account-lock-addon":
+      return "D";
+    case "session-high-low-indicator":
+      return "H";
+    default:
+      throw new Error(`Unsupported product slug for license generation: ${slug}`);
+  }
+}
+
+function getSlugsForScopeCode(scope: ShortLicenseScopeCode) {
+  switch (scope) {
+    case "R":
+      return ["gg-rr-trade-panel"];
+    case "S":
+      return ["gg-stochastic-momentum-index"];
+    case "D":
+      return ["daily-account-lock-addon"];
+    case "H":
+      return ["session-high-low-indicator"];
+    case "B":
+      return products.map((product) => product.slug);
+    default:
+      return [];
+  }
+}
+
+function signShortLicense(scope: ShortLicenseScopeCode, nonce: string) {
+  return encodeBase32(
+    crypto.createHmac("sha256", getLicenseSigningSecret()).update(`short:${scope}:${nonce}`).digest()
+  ).slice(0, SHORT_LICENSE_SIGNATURE_LENGTH);
+}
+
+function parseShortLicenseKey(licenseKey?: string | null) {
+  const normalizedKey = licenseKey?.trim().toUpperCase() ?? "";
+
+  if (!normalizedKey.startsWith(SHORT_LICENSE_PREFIX)) {
+    return null;
+  }
+
+  const body = normalizedKey.slice(SHORT_LICENSE_PREFIX.length).replace(/-/g, "");
+  const expectedBodyLength = SHORT_LICENSE_GROUP_SIZE * SHORT_LICENSE_GROUP_COUNT;
+
+  if (body.length !== expectedBodyLength) {
+    return null;
+  }
+
+  if (![...body].every((character) => SHORT_LICENSE_ALPHABET.includes(character))) {
+    return null;
+  }
+
+  const scope = body[0] as ShortLicenseScopeCode;
+  const nonce = body.slice(1, 1 + SHORT_LICENSE_NONCE_LENGTH);
+  const signature = body.slice(1 + SHORT_LICENSE_NONCE_LENGTH);
+
+  if (!["R", "S", "D", "H", "B"].includes(scope) || !nonce || !signature) {
+    return null;
+  }
+
+  const expectedSignature = signShortLicense(scope, nonce);
+  const expectedBuffer = Buffer.from(expectedSignature, "utf8");
+  const actualBuffer = Buffer.from(signature, "utf8");
+
+  if (
+    expectedBuffer.length !== actualBuffer.length ||
+    !crypto.timingSafeEqual(expectedBuffer, actualBuffer)
+  ) {
+    return null;
+  }
+
+  return {
+    scope,
+    nonce,
+    slugs: getSlugsForScopeCode(scope)
+  };
 }
 
 function getLicenseSigningSecret() {
@@ -94,11 +224,11 @@ function matchesRequestedProduct(slugs: string[], requestedProduct: string) {
 function parseStatelessLicenseKey(licenseKey?: string | null) {
   const normalizedKey = licenseKey?.trim() ?? "";
 
-  if (!normalizedKey.startsWith(STATELESS_LICENSE_PREFIX)) {
+  if (!normalizedKey.startsWith(LEGACY_STATELESS_LICENSE_PREFIX)) {
     return null;
   }
 
-  const encoded = normalizedKey.slice(STATELESS_LICENSE_PREFIX.length);
+  const encoded = normalizedKey.slice(LEGACY_STATELESS_LICENSE_PREFIX.length);
   const separatorIndex = encoded.lastIndexOf(".");
 
   if (separatorIndex <= 0) {
@@ -212,9 +342,10 @@ export function createLicenseKey(input: {
   purchasedSlugs: string[];
   createdAt: string;
 }) {
-  const payload = buildStatelessLicensePayload(input);
-  const payloadEncoded = toBase64Url(JSON.stringify(payload));
-  return `${STATELESS_LICENSE_PREFIX}${payloadEncoded}.${signLicensePayload(payloadEncoded)}`;
+  const scope = getScopeCodeForSlugs(input.purchasedSlugs);
+  const nonce = encodeBase32(crypto.randomBytes(5)).slice(0, SHORT_LICENSE_NONCE_LENGTH);
+  const signature = signShortLicense(scope, nonce);
+  return formatShortLicenseBody(`${scope}${nonce}${signature}`);
 }
 
 export async function readLicenseRecords() {
@@ -227,6 +358,20 @@ export async function verifyProductLicense(input: { licenseKey?: string; product
 
   if (!normalizedKey || !normalizedProduct) {
     return null;
+  }
+
+  const shortLicense = parseShortLicenseKey(normalizedKey);
+
+  if (shortLicense && matchesRequestedProduct(shortLicense.slugs, normalizedProduct)) {
+    return {
+      license_key: normalizedKey,
+      customer_email: "",
+      product_id: shortLicense.slugs.length === 1 ? shortLicense.slugs[0] : null,
+      bundle_id: shortLicense.slugs.length > 1 ? BUNDLE_ID : null,
+      payment_status: "COMPLETED" as const,
+      created_at: new Date(0).toISOString(),
+      status: "active" as const
+    };
   }
 
   const statelessPayload = parseStatelessLicenseKey(normalizedKey);

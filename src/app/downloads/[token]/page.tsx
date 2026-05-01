@@ -118,7 +118,7 @@ export default async function PrivateDownloadPage({
               {record.licenseKey}
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
-              <CopyTextButton text={record.licenseKey} label="Copy license key" copiedLabel="License copied" />
+              <CopyTextButton text={record.licenseKey} label="Copy License" copiedLabel="Copied" />
             </div>
             <p className="mt-4 text-sm leading-7 text-zinc-300">{activationSupportText}</p>
             <p className="mt-2 text-sm font-medium text-emerald-200">Lifetime updates + ongoing improvements</p>
@@ -143,7 +143,7 @@ export default async function PrivateDownloadPage({
               </p>
 
               <div className="mt-6 flex flex-wrap gap-3">
-                <CopyTextButton text={record.licenseKey} label="Copy license key" copiedLabel="License copied" />
+                <CopyTextButton text={record.licenseKey} label="Copy License" copiedLabel="Copied" />
                 <span className="inline-flex items-center justify-center rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-zinc-100">
                   Installation guide coming soon
                 </span>
