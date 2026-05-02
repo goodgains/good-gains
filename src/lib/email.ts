@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { DeliveryRecord, buildPrivateDownloadUrl, getDeliveryDownloadData } from "@/lib/delivery";
+import { getBaseUrl } from "@/lib/base-url";
 import { bundleDownload } from "@/lib/downloads";
 import { siteConfig } from "@/lib/site";
 
@@ -10,6 +11,14 @@ export type LicenseRecoveryEntry = {
   downloadToken: string;
   createdAt: string;
   purchasedSlugs: string[];
+};
+
+export type ProductUpdateEmailInput = {
+  customerEmail: string;
+  productName: string;
+  version: string;
+  title: string;
+  changelog: string;
 };
 
 function resolveConfiguredEmail(value?: string | null) {
@@ -248,6 +257,53 @@ function buildLicenseRecoveryContent(input: {
   return {
     subject: "Your Good Gains license recovery details",
     text: textLines.join("\n"),
+    html
+  };
+}
+
+function buildProductUpdateContent(input: ProductUpdateEmailInput) {
+  const recoverUrl = `${getBaseUrl()}/recover-license`;
+  const safeTitle = input.title.trim();
+  const safeChangelog = input.changelog.trim();
+  const safeProductName = input.productName.trim();
+  const safeVersion = input.version.trim();
+
+  const text = [
+    `New update available: ${safeProductName} v${safeVersion}`,
+    "",
+    safeTitle,
+    "",
+    safeChangelog,
+    "",
+    `Recover your license and downloads here: ${recoverUrl}`
+  ].join("\n");
+
+  const html = `
+    <div style="background:#09090b;padding:32px;font-family:Arial,sans-serif;color:#e4e4e7;">
+      <div style="max-width:720px;margin:0 auto;border:1px solid rgba(255,255,255,0.08);border-radius:24px;background:#111115;padding:32px;">
+        <p style="margin:0 0 12px;font-size:12px;letter-spacing:0.28em;text-transform:uppercase;color:#6ee7b7;">Product Update</p>
+        <h1 style="margin:0 0 12px;font-size:30px;line-height:1.2;color:#ffffff;">${escapeHtml(safeProductName)} v${escapeHtml(safeVersion)}</h1>
+        <p style="margin:0 0 18px;font-size:18px;line-height:1.6;color:#ffffff;font-weight:600;">
+          ${escapeHtml(safeTitle)}
+        </p>
+        <div style="border:1px solid rgba(255,255,255,0.08);border-radius:20px;background:#09090b;padding:20px;">
+          <p style="margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:0.24em;color:#a1a1aa;">Changelog</p>
+          <p style="margin:0;font-size:15px;line-height:1.8;color:#d4d4d8;white-space:pre-wrap;">${escapeHtml(safeChangelog)}</p>
+        </div>
+        <p style="margin:24px 0 0;font-size:15px;line-height:1.8;color:#d4d4d8;">
+          Recover your latest download access and license details here:
+        </p>
+        <a href="${recoverUrl}" style="display:inline-block;margin-top:12px;padding:14px 24px;border-radius:999px;background:#6ee7b7;color:#000000;font-weight:700;text-decoration:none;">
+          Open License Recovery
+        </a>
+        <p style="margin:16px 0 0;font-size:14px;color:#a1a1aa;">${escapeHtml(recoverUrl)}</p>
+      </div>
+    </div>
+  `;
+
+  return {
+    subject: `New update available: ${safeProductName} v${safeVersion}`,
+    text,
     html
   };
 }
@@ -572,6 +628,87 @@ export async function sendLicenseRecoveryEmail(input: {
     fallbackFromEmail,
     replyTo,
     purchaseCount: input.entries.length
+  });
+
+  if (!hasRealResendConfig() || !resendApiKey || !fromEmail) {
+    throw new Error(
+      `Email provider is not configured. Required env vars: RESEND_API_KEY and RESEND_FROM_EMAIL. Current from="${fromEmail ?? ""}" replyTo="${replyTo}".`
+    );
+  }
+
+  const primaryFrom = `${fromName} <${fromEmail}>`;
+  const fallbackFrom = fallbackFromEmail ? `${fromName} <${fallbackFromEmail}>` : null;
+
+  try {
+    const result = await sendViaResendWithRetry({
+      resendApiKey,
+      from: primaryFrom,
+      to: [input.customerEmail],
+      replyTo,
+      subject: content.subject,
+      html: content.html,
+      text: content.text
+    });
+
+    return {
+      mode: "resend" as const,
+      id: result.id,
+      status: result.status,
+      providerResponse: result.result,
+      from: primaryFrom,
+      replyTo,
+      to: input.customerEmail
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const shouldRetryWithFallback =
+      Boolean(fallbackFromEmail && fallbackFrom) &&
+      !fallbackFrom!.toLowerCase().includes(fromEmail.toLowerCase()) &&
+      errorMessage.toLowerCase().includes("domain is not verified");
+
+    if (!shouldRetryWithFallback) {
+      throw error;
+    }
+
+    const fallbackResult = await sendViaResendWithRetry({
+      resendApiKey,
+      from: fallbackFrom!,
+      to: [input.customerEmail],
+      replyTo,
+      subject: content.subject,
+      html: content.html,
+      text: content.text
+    });
+
+    return {
+      mode: "resend-fallback" as const,
+      id: fallbackResult.id,
+      status: fallbackResult.status,
+      providerResponse: fallbackResult.result,
+      from: fallbackFrom!,
+      replyTo,
+      to: input.customerEmail
+    };
+  }
+}
+
+export async function sendProductUpdateEmail(input: ProductUpdateEmailInput) {
+  const content = buildProductUpdateContent(input);
+  const resendApiKey = process.env.RESEND_API_KEY?.trim();
+  const fromEmail = resolveConfiguredEmail(process.env.RESEND_FROM_EMAIL);
+  const fallbackFromEmail = resolveConfiguredEmail(process.env.RESEND_FALLBACK_FROM_EMAIL);
+  const fromName = siteConfig.emailFromName;
+  const replyTo = siteConfig.supportEmail;
+
+  console.log("Preparing product update email", {
+    customerEmail: input.customerEmail,
+    to: input.customerEmail,
+    productName: input.productName,
+    version: input.version,
+    hasResendApiKey: Boolean(resendApiKey),
+    fromEmail,
+    fallbackFromEmail,
+    replyTo
   });
 
   if (!hasRealResendConfig() || !resendApiKey || !fromEmail) {

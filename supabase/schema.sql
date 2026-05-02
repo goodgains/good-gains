@@ -82,3 +82,32 @@ create table if not exists public.delivery_logs (
 create index if not exists delivery_logs_customer_id_idx on public.delivery_logs (customer_id);
 create index if not exists delivery_logs_order_id_idx on public.delivery_logs (order_id);
 create index if not exists delivery_logs_license_id_idx on public.delivery_logs (license_id);
+
+create table if not exists public.product_updates (
+  id uuid primary key default gen_random_uuid(),
+  product_id text not null,
+  product_name text not null,
+  version text not null,
+  title text not null,
+  changelog text not null,
+  download_url text not null,
+  created_at timestamptz not null default timezone('utc', now()),
+  sent_at timestamptz null
+);
+
+create index if not exists product_updates_product_id_idx on public.product_updates (product_id);
+create index if not exists product_updates_created_at_idx on public.product_updates (created_at desc);
+
+create table if not exists public.product_update_email_logs (
+  id uuid primary key default gen_random_uuid(),
+  product_update_id uuid not null references public.product_updates(id) on delete cascade,
+  customer_email text not null,
+  license_key text not null,
+  status text not null,
+  resend_message_id text null,
+  error text null,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists product_update_email_logs_update_id_idx on public.product_update_email_logs (product_update_id);
+create index if not exists product_update_email_logs_customer_email_idx on public.product_update_email_logs (customer_email);

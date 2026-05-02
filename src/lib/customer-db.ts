@@ -67,6 +67,29 @@ type DeliveryLogRow = {
   created_at: string;
 };
 
+type ProductUpdateRow = {
+  id: string;
+  product_id: string;
+  product_name: string;
+  version: string;
+  title: string;
+  changelog: string;
+  download_url: string;
+  created_at: string;
+  sent_at: string | null;
+};
+
+type ProductUpdateEmailLogRow = {
+  id: string;
+  product_update_id: string;
+  customer_email: string;
+  license_key: string;
+  status: "sent" | "failed";
+  resend_message_id: string | null;
+  error: string | null;
+  created_at: string;
+};
+
 type PersistedDeliveryIds = {
   customerId: string;
   orderId: string;
@@ -85,6 +108,19 @@ type RecoveryPurchase = {
   downloadToken: string;
   createdAt: string;
   expiresAt: string | null;
+};
+
+export type ProductUpdateRecipient = {
+  customerId: string;
+  customerEmail: string;
+  customerName: string;
+  orderId: string;
+  licenseId: string;
+  licenseKey: string;
+  productSlug: string;
+  productName: string;
+  purchasedSlugs: string[];
+  orderCreatedAt: string;
 };
 
 function normalizeEmail(email?: string | null) {
@@ -315,6 +351,35 @@ async function selectLicenseByKey(licenseKey: string) {
     `licenses?select=*&license_key=eq.${encodeFilterValue(licenseKey)}&limit=1`
   );
   return response.data?.[0] ?? null;
+}
+
+async function selectLicensesByIds(licenseIds: string[]) {
+  if (licenseIds.length === 0) {
+    return [];
+  }
+
+  const response = await supabaseRequest<LicenseRow[]>(
+    `licenses?select=*&id=in.(${encodeInFilter(licenseIds)})`
+  );
+  return response.data ?? [];
+}
+
+async function selectCustomersByIds(customerIds: string[]) {
+  if (customerIds.length === 0) {
+    return [];
+  }
+
+  const response = await supabaseRequest<CustomerRow[]>(
+    `customers?select=*&id=in.(${encodeInFilter(customerIds)})`
+  );
+  return response.data ?? [];
+}
+
+async function selectLicenseProductsByProductSlug(productSlug: string) {
+  const response = await supabaseRequest<LicenseProductRow[]>(
+    `license_products?select=*&product_slug=eq.${encodeFilterValue(productSlug)}`
+  );
+  return response.data ?? [];
 }
 
 function matchesRequestedProduct(slugs: string[], requestedProduct: string) {
@@ -650,4 +715,174 @@ export async function getRecoveryPurchasesByEmail(email: string): Promise<Recove
       } satisfies RecoveryPurchase;
     })
     .filter((entry): entry is RecoveryPurchase => Boolean(entry));
+}
+
+export async function createProductUpdateRecord(input: {
+  productId: string;
+  productName: string;
+  version: string;
+  title: string;
+  changelog: string;
+  downloadUrl: string;
+}) {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  const response = await supabaseRequest<ProductUpdateRow[]>("product_updates?select=*", {
+    method: "POST",
+    body: [
+      {
+        product_id: input.productId,
+        product_name: input.productName,
+        version: input.version,
+        title: input.title,
+        changelog: input.changelog,
+        download_url: input.downloadUrl
+      }
+    ],
+    prefer: ["return=representation"]
+  });
+
+  return response.data?.[0] ?? null;
+}
+
+export async function markProductUpdateSent(productUpdateId: string) {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  const response = await supabaseRequest<ProductUpdateRow[]>(
+    `product_updates?id=eq.${encodeFilterValue(productUpdateId)}&select=*`,
+    {
+      method: "PATCH",
+      body: {
+        sent_at: new Date().toISOString()
+      },
+      prefer: ["return=representation"]
+    }
+  );
+
+  return response.data?.[0] ?? null;
+}
+
+export async function logProductUpdateEmailEvent(input: {
+  productUpdateId: string;
+  customerEmail: string;
+  licenseKey: string;
+  status: "sent" | "failed";
+  resendMessageId?: string | null;
+  error?: string | null;
+}) {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  const response = await supabaseRequest<ProductUpdateEmailLogRow[]>(
+    "product_update_email_logs?select=*",
+    {
+      method: "POST",
+      body: [
+        {
+          product_update_id: input.productUpdateId,
+          customer_email: normalizeEmail(input.customerEmail),
+          license_key: input.licenseKey,
+          status: input.status,
+          resend_message_id: input.resendMessageId ?? null,
+          error: input.error ?? null
+        }
+      ],
+      prefer: ["return=representation"]
+    }
+  );
+
+  return response.data?.[0] ?? null;
+}
+
+export async function getProductUpdateRecipients(
+  productSlug: string
+): Promise<ProductUpdateRecipient[]> {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
+  const matchingLicenseProducts = await selectLicenseProductsByProductSlug(productSlug);
+
+  if (matchingLicenseProducts.length === 0) {
+    return [];
+  }
+
+  const licenseIds = [...new Set(matchingLicenseProducts.map((row) => row.license_id))];
+  const licenses = await selectLicensesByIds(licenseIds);
+  const activeLicenses = licenses.filter(
+    (license) => license.status === "active" && license.payment_status === "COMPLETED"
+  );
+
+  if (activeLicenses.length === 0) {
+    return [];
+  }
+
+  const activeLicenseIds = activeLicenses.map((license) => license.id);
+  const [customers, ordersResponse, allLicenseProductsResponse] = await Promise.all([
+    selectCustomersByIds([...new Set(activeLicenses.map((license) => license.customer_id))]),
+    supabaseRequest<OrderRow[]>(
+      `orders?select=*&id=in.(${encodeInFilter([...new Set(activeLicenses.map((license) => license.order_id))])})`
+    ),
+    supabaseRequest<LicenseProductRow[]>(
+      `license_products?select=*&license_id=in.(${encodeInFilter(activeLicenseIds)})`
+    )
+  ]);
+
+  const customersById = new Map(customers.map((customer) => [customer.id, customer]));
+  const ordersById = new Map((ordersResponse.data ?? []).map((order) => [order.id, order]));
+  const licenseProductsByLicenseId = new Map<string, LicenseProductRow[]>();
+
+  for (const row of allLicenseProductsResponse.data ?? []) {
+    const existing = licenseProductsByLicenseId.get(row.license_id) ?? [];
+    existing.push(row);
+    licenseProductsByLicenseId.set(row.license_id, existing);
+  }
+
+  const recipients = activeLicenses
+    .map((license) => {
+      const customer = customersById.get(license.customer_id);
+      const order = ordersById.get(license.order_id);
+
+      if (!customer || !order || order.payment_status !== "COMPLETED") {
+        return null;
+      }
+
+      const productRows = licenseProductsByLicenseId.get(license.id) ?? [];
+      const slugs =
+        productRows.length > 0 ? mapLicenseRowsToProductSlugs(productRows) : order.purchased_slugs;
+
+      if (!slugs.includes(productSlug)) {
+        return null;
+      }
+
+      return {
+        customerId: customer.id,
+        customerEmail: normalizeEmail(customer.email),
+        customerName: order.customer_name || customer.name || "Trader",
+        orderId: order.id,
+        licenseId: license.id,
+        licenseKey: license.license_key,
+        productSlug,
+        productName: getProductName(productSlug),
+        purchasedSlugs: slugs,
+        orderCreatedAt: order.created_at
+      } satisfies ProductUpdateRecipient;
+    })
+    .filter((entry): entry is ProductUpdateRecipient => Boolean(entry))
+    .sort((left, right) => right.orderCreatedAt.localeCompare(left.orderCreatedAt));
+
+  const uniqueRecipients = new Map<string, ProductUpdateRecipient>();
+
+  for (const recipient of recipients) {
+    if (!uniqueRecipients.has(recipient.customerEmail)) {
+      uniqueRecipients.set(recipient.customerEmail, recipient);
+    }
+  }
+
+  return [...uniqueRecipients.values()];
 }
