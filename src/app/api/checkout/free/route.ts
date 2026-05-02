@@ -26,7 +26,22 @@ export async function POST(request: Request) {
     const couponCode = normalizeCouponCode(body.couponCode);
     const customerEmail = body.customerEmail?.trim().toLowerCase();
 
+    console.log("Free coupon checkout request received", {
+      productName: productName ?? null,
+      productId: productId ?? null,
+      couponCode: couponCode ?? null,
+      receivedEmailFromFrontend: body.customerEmail ?? null,
+      customerEmail: customerEmail ?? null
+    });
+
     if (!productName || !productId || !couponCode || !customerEmail) {
+      console.warn("Free coupon checkout missing required fields", {
+        productName: productName ?? null,
+        productId: productId ?? null,
+        couponCode: couponCode ?? null,
+        receivedEmailFromFrontend: body.customerEmail ?? null,
+        customerEmail: customerEmail ?? null
+      });
       return NextResponse.json(
         { success: false, message: "Missing product, coupon, or customer email." },
         { status: 400 }
@@ -34,6 +49,13 @@ export async function POST(request: Request) {
     }
 
     if (!EMAIL_PATTERN.test(customerEmail)) {
+      console.warn("Free coupon checkout received invalid customer email", {
+        productName,
+        productId,
+        couponCode,
+        receivedEmailFromFrontend: body.customerEmail ?? null,
+        customerEmail
+      });
       return NextResponse.json(
         { success: false, message: "Please enter a valid email address." },
         { status: 400 }
@@ -94,6 +116,7 @@ export async function POST(request: Request) {
     }
 
     console.log("Free coupon email send attempt", {
+      receivedEmailFromFrontend: body.customerEmail ?? null,
       customerEmail: record.customerEmail,
       to: record.customerEmail,
       product: record.purchasedProductName,
@@ -103,9 +126,10 @@ export async function POST(request: Request) {
     try {
       const emailResult = await sendPurchaseEmail(record);
       console.log("Free coupon email sent successfully", {
+        receivedEmailFromFrontend: body.customerEmail ?? null,
         customerEmail: record.customerEmail,
         provider: emailResult.mode,
-        messageId: emailResult.id,
+        resendMessageId: emailResult.id,
         status: "status" in emailResult ? emailResult.status : null,
         from: emailResult.from,
         replyTo: emailResult.replyTo,
@@ -123,9 +147,13 @@ export async function POST(request: Request) {
           sent: true,
           provider: "resend",
           mode: emailResult.mode,
-          messageId: emailResult.id,
+          receivedEmailFromFrontend: body.customerEmail ?? null,
+          customerEmail: record.customerEmail,
+          to: record.customerEmail,
           from: emailResult.from,
           replyTo: emailResult.replyTo,
+          resendMessageId: emailResult.id,
+          status: "status" in emailResult ? emailResult.status : null,
           providerResponse: "providerResponse" in emailResult ? emailResult.providerResponse : null
         }
       });
@@ -144,11 +172,12 @@ export async function POST(request: Request) {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("Free coupon email failed", {
+        receivedEmailFromFrontend: body.customerEmail ?? null,
         customerEmail: record.customerEmail,
         to: record.customerEmail,
         product: record.purchasedProductName,
         licenseKey: record.licenseKey,
-        error: errorMessage
+        resendError: errorMessage
       });
 
       const response = NextResponse.json({
@@ -158,7 +187,12 @@ export async function POST(request: Request) {
         emailDelivery: {
           sent: false,
           provider: "resend",
-          error: errorMessage
+          receivedEmailFromFrontend: body.customerEmail ?? null,
+          customerEmail: record.customerEmail,
+          to: record.customerEmail,
+          from: process.env.RESEND_FROM_EMAIL?.trim() || null,
+          replyTo: process.env.SUPPORT_EMAIL?.trim() || null,
+          resendError: errorMessage
         }
       });
 

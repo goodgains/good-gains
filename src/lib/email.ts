@@ -295,6 +295,7 @@ export async function sendPurchaseEmail(record: DeliveryRecord) {
   const replyTo = siteConfig.supportEmail;
 
   console.log("Preparing purchase email", {
+    customerEmail: record.customerEmail,
     to: record.customerEmail,
     product: record.purchasedProductName,
     licenseKey: record.licenseKey,
@@ -305,6 +306,15 @@ export async function sendPurchaseEmail(record: DeliveryRecord) {
   });
 
   if (!hasRealResendConfig() || !resendApiKey || !fromEmail) {
+    console.error("Purchase email provider configuration invalid", {
+      customerEmail: record.customerEmail,
+      to: record.customerEmail,
+      from: fromEmail ? `${fromName} <${fromEmail}>` : null,
+      replyTo,
+      hasResendApiKey: Boolean(resendApiKey),
+      hasResendFromEmail: Boolean(fromEmail),
+      resendError: "Missing RESEND_API_KEY or RESEND_FROM_EMAIL"
+    });
     await writePreviewEmail(record, content);
     throw new Error(
       `Email provider is not configured. Required env vars: RESEND_API_KEY and RESEND_FROM_EMAIL. Current from="${fromEmail ?? ""}" replyTo="${replyTo}".`
@@ -341,6 +351,13 @@ export async function sendPurchaseEmail(record: DeliveryRecord) {
       errorMessage.toLowerCase().includes("domain is not verified");
 
     if (!shouldRetryWithFallback) {
+      console.error("Purchase email send failed", {
+        customerEmail: record.customerEmail,
+        to: record.customerEmail,
+        from: primaryFrom,
+        replyTo,
+        resendError: errorMessage
+      });
       throw error;
     }
 

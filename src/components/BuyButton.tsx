@@ -110,8 +110,9 @@ export function BuyButton({
 
   async function handleCheckout() {
     const isFreeCouponCheckout = couponStatus?.valid && couponStatus.finalPrice === 0;
+    const normalizedCustomerEmail = customerEmail.trim().toLowerCase();
 
-    if (!EMAIL_PATTERN.test(customerEmail.trim())) {
+    if (!EMAIL_PATTERN.test(normalizedCustomerEmail)) {
       setError("Please enter a valid email address.");
       return;
     }
@@ -133,7 +134,7 @@ export function BuyButton({
           productId,
           priceIdEnv,
           couponCode: couponStatus?.valid ? couponCode : "",
-          customerEmail
+          customerEmail: normalizedCustomerEmail
         })
       });
 
