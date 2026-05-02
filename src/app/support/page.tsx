@@ -53,14 +53,15 @@ export default async function SupportPage({
                 </a>{" "}
                 for help.
               </p>
+              <p className="mt-2 text-sm font-medium text-zinc-200">Support response time: within 24 hours.</p>
               <div className="mt-6 grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl border border-white/10 bg-zinc-950/70 p-4">
-                  <p className="text-sm font-semibold text-white">More tools coming soon</p>
-                  <p className="mt-2 text-sm leading-7 text-zinc-400">The product line is positioned to grow into a broader trading workflow over time.</p>
+                  <p className="text-sm font-semibold text-white">License, delivery, and setup help</p>
+                  <p className="mt-2 text-sm leading-7 text-zinc-400">Reach out for license recovery, NinjaTrader 8 installation questions, or help accessing your downloads.</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-zinc-950/70 p-4">
-                  <p className="text-sm font-semibold text-white">Future updates included</p>
-                  <p className="mt-2 text-sm leading-7 text-zinc-400">Show traders that the toolkit is intended to keep improving after purchase.</p>
+                  <p className="text-sm font-semibold text-white">Product updates included</p>
+                  <p className="mt-2 text-sm leading-7 text-zinc-400">We can help with update notifications, reinstalling purchased tools, and getting you back up and running quickly.</p>
                 </div>
               </div>
               <a href="#message-form" className="mt-6 inline-flex rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-black">

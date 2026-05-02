@@ -98,6 +98,8 @@ export default function HomePage() {
                 View Products &amp; Pricing
               </Link>
               <p className="text-base font-medium text-zinc-50">One-time payment • Lifetime access</p>
+              <p className="max-w-xl text-sm leading-7 text-zinc-300">Instant digital delivery. Your license key and download access are sent by email after purchase.</p>
+              <p className="text-sm leading-7 text-zinc-400">All tools are built for NinjaTrader 8 and require NinjaTrader 8 to use.</p>
             </div>
 
             </div>

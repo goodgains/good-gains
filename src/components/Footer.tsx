@@ -8,7 +8,8 @@ const legalLinks: { href: Route; label: string }[] = [
   { href: "/terms-of-service", label: "Terms of Service" },
   { href: "/privacy-policy", label: "Privacy Policy" },
   { href: "/refund-policy", label: "Refund Policy" },
-  { href: "/risk-disclaimer", label: "Risk Disclaimer" }
+  { href: "/risk-disclaimer", label: "Risk Disclaimer" },
+  { href: "/recover-license", label: "Recover License" }
 ];
 
 export function Footer() {
@@ -32,6 +33,7 @@ export function Footer() {
               <Link href="/bundle">Bundle Offer</Link>
               <Link href="/downloads">Downloads</Link>
               <Link href="/custom-development">Custom Development</Link>
+              <Link href="/contact">Contact</Link>
               <Link href="/support">Support</Link>
             </div>
           </div>
@@ -50,7 +52,10 @@ export function Footer() {
 
         <div className="flex flex-col gap-4 border-t border-white/10 pt-6 text-sm text-zinc-500 md:flex-row md:items-center md:justify-between">
           <p>© {new Date().getFullYear()} {siteConfig.name}. All rights reserved.</p>
-          <p>{siteConfig.supportEmail}</p>
+          <div className="space-y-1 text-right">
+            <p>{siteConfig.supportEmail}</p>
+            <p className="text-xs text-zinc-600">Support response time: within 24 hours.</p>
+          </div>
         </div>
       </Container>
     </footer>

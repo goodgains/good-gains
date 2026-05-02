@@ -162,6 +162,8 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
       ) : null}
       {bundleView ? <p className="mt-3 text-sm font-medium text-zinc-100">Most traders choose this option</p> : null}
       <p className="mt-3 text-sm font-medium text-zinc-200">One-time payment - Lifetime updates + ongoing improvements</p>
+      <p className="mt-3 text-sm leading-7 text-zinc-300">Instant digital delivery. Your license key and download access are sent by email after purchase.</p>
+      <p className="mt-2 text-sm leading-7 text-zinc-400">All tools are built for NinjaTrader 8 and require NinjaTrader 8 to use.</p>
       {isDailyAccountLock ? (
         <p className="mt-4 text-center text-sm font-medium text-emerald-100/80">Used daily by traders to prevent overtrading and protect profits</p>
       ) : null}
