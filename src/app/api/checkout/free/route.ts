@@ -8,6 +8,7 @@ import {
 import { incrementCouponUsage, normalizeCouponCode, validateCouponForProduct } from "@/lib/coupons";
 import { sendPurchaseEmail } from "@/lib/email";
 import { bundle, products } from "@/lib/products";
+import { siteConfig } from "@/lib/site";
 
 type FreeCheckoutBody = {
   productName?: string;
@@ -190,8 +191,8 @@ export async function POST(request: Request) {
           receivedEmailFromFrontend: body.customerEmail ?? null,
           customerEmail: record.customerEmail,
           to: record.customerEmail,
-          from: process.env.RESEND_FROM_EMAIL?.trim() || null,
-          replyTo: process.env.SUPPORT_EMAIL?.trim() || null,
+          from: process.env.RESEND_FROM_EMAIL?.trim() || siteConfig.supportEmail,
+          replyTo: siteConfig.supportEmail,
           resendError: errorMessage
         }
       });
