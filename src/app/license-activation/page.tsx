@@ -1,4 +1,5 @@
 import { PageHero } from "@/components/PageHero";
+import { RecoverLicenseForm } from "@/components/RecoverLicenseForm";
 import { Container } from "@/components/ui/Container";
 
 export default function LicenseActivationPage() {
@@ -6,11 +7,25 @@ export default function LicenseActivationPage() {
     <>
       <PageHero
         eyebrow="License & Activation"
-        title="Current license delivery overview and future activation roadmap"
-        description="This page explains the present purchase flow and documents the placeholder structure for the future automated license system."
+        title="License activation and recovery"
+        description="Recover your license details by email, review the current delivery flow, and keep your Good Gains access organized in one place."
       />
       <section className="py-16 md:py-20">
         <Container className="space-y-8">
+          <div className="rounded-[2rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_top,_rgba(52,211,153,0.14),_rgba(0,0,0,0.94)_55%)] p-6 md:p-8">
+            <div className="max-w-3xl space-y-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300">Recover License</p>
+              <h2 className="text-3xl font-semibold text-white">Send your license details to your purchase email</h2>
+              <p className="text-base leading-8 text-zinc-300">
+                Enter the same email address used during checkout. If matching purchases exist, we&apos;ll send your
+                license keys and private download links.
+              </p>
+            </div>
+            <div className="mt-8 max-w-2xl rounded-[1.75rem] border border-white/10 bg-black/35 p-5 md:p-6">
+              <RecoverLicenseForm />
+            </div>
+          </div>
+
           <div className="grid gap-6 lg:grid-cols-2">
             <article className="rounded-[2rem] border border-white/10 bg-zinc-950/70 p-6">
               <h2 className="text-2xl font-semibold text-white">Current workflow</h2>
