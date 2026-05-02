@@ -4,6 +4,14 @@ import { DeliveryRecord, buildPrivateDownloadUrl, getDeliveryDownloadData } from
 import { bundleDownload } from "@/lib/downloads";
 import { siteConfig } from "@/lib/site";
 
+export type LicenseRecoveryEntry = {
+  productName: string;
+  licenseKey: string;
+  downloadToken: string;
+  createdAt: string;
+  purchasedSlugs: string[];
+};
+
 function resolveConfiguredEmail(value?: string | null) {
   const normalized = value?.trim();
   if (!normalized || !normalized.includes("@")) {
@@ -181,6 +189,66 @@ function buildSupportMessageContent(input: {
         </div>
       </div>
     `
+  };
+}
+
+function buildLicenseRecoveryContent(input: {
+  customerEmail: string;
+  entries: LicenseRecoveryEntry[];
+}) {
+  const sortedEntries = [...input.entries].sort((left, right) =>
+    right.createdAt.localeCompare(left.createdAt)
+  );
+
+  const textLines = [
+    "Here are your Good Gains license details and private download links:",
+    ""
+  ];
+
+  for (const entry of sortedEntries) {
+    textLines.push(`Product: ${entry.productName}`);
+    textLines.push(`License key: ${entry.licenseKey}`);
+    textLines.push(`Download page: ${buildPrivateDownloadUrl(entry.downloadToken)}`);
+    textLines.push("");
+  }
+
+  const cardsHtml = sortedEntries
+    .map((entry) => {
+      const downloadUrl = buildPrivateDownloadUrl(entry.downloadToken);
+
+      return `
+        <div style="border:1px solid rgba(255,255,255,0.08);border-radius:20px;background:#09090b;padding:20px;margin-top:16px;">
+          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.24em;color:#a1a1aa;">${escapeHtml(entry.productName)}</p>
+          <p style="margin:10px 0 0;font-size:22px;font-weight:700;color:#ffffff;">${escapeHtml(entry.licenseKey)}</p>
+          <p style="margin:12px 0 0;font-size:14px;line-height:1.8;color:#d4d4d8;">Download page:</p>
+          <a href="${downloadUrl}" style="display:inline-block;margin-top:8px;color:#6ee7b7;text-decoration:none;font-weight:600;">
+            ${escapeHtml(downloadUrl)}
+          </a>
+        </div>
+      `;
+    })
+    .join("");
+
+  const html = `
+    <div style="background:#09090b;padding:32px;font-family:Arial,sans-serif;color:#e4e4e7;">
+      <div style="max-width:720px;margin:0 auto;border:1px solid rgba(255,255,255,0.08);border-radius:24px;background:#111115;padding:32px;">
+        <p style="margin:0 0 12px;font-size:12px;letter-spacing:0.28em;text-transform:uppercase;color:#6ee7b7;">License Recovery</p>
+        <h1 style="margin:0 0 12px;font-size:32px;line-height:1.2;color:#ffffff;">Your Good Gains licenses</h1>
+        <p style="margin:0 0 24px;font-size:16px;line-height:1.8;color:#d4d4d8;">
+          We found active purchases for ${escapeHtml(input.customerEmail)}. Your license keys and private download pages are listed below.
+        </p>
+        ${cardsHtml}
+        <p style="margin:24px 0 0;font-size:14px;line-height:1.8;color:#a1a1aa;">
+          Need help installing your files? Reply to this email or contact ${escapeHtml(siteConfig.supportEmail)}.
+        </p>
+      </div>
+    </div>
+  `;
+
+  return {
+    subject: "Your Good Gains license recovery details",
+    text: textLines.join("\n"),
+    html
   };
 }
 
@@ -481,6 +549,89 @@ export async function sendSupportMessageEmail(input: {
       from: fallbackFrom!,
       replyTo,
       to
+    };
+  }
+}
+
+export async function sendLicenseRecoveryEmail(input: {
+  customerEmail: string;
+  entries: LicenseRecoveryEntry[];
+}) {
+  const content = buildLicenseRecoveryContent(input);
+  const resendApiKey = process.env.RESEND_API_KEY?.trim();
+  const fromEmail = resolveConfiguredEmail(process.env.RESEND_FROM_EMAIL);
+  const fallbackFromEmail = resolveConfiguredEmail(process.env.RESEND_FALLBACK_FROM_EMAIL);
+  const fromName = siteConfig.emailFromName;
+  const replyTo = siteConfig.supportEmail;
+
+  console.log("Preparing license recovery email", {
+    customerEmail: input.customerEmail,
+    to: input.customerEmail,
+    hasResendApiKey: Boolean(resendApiKey),
+    fromEmail,
+    fallbackFromEmail,
+    replyTo,
+    purchaseCount: input.entries.length
+  });
+
+  if (!hasRealResendConfig() || !resendApiKey || !fromEmail) {
+    throw new Error(
+      `Email provider is not configured. Required env vars: RESEND_API_KEY and RESEND_FROM_EMAIL. Current from="${fromEmail ?? ""}" replyTo="${replyTo}".`
+    );
+  }
+
+  const primaryFrom = `${fromName} <${fromEmail}>`;
+  const fallbackFrom = fallbackFromEmail ? `${fromName} <${fallbackFromEmail}>` : null;
+
+  try {
+    const result = await sendViaResendWithRetry({
+      resendApiKey,
+      from: primaryFrom,
+      to: [input.customerEmail],
+      replyTo,
+      subject: content.subject,
+      html: content.html,
+      text: content.text
+    });
+
+    return {
+      mode: "resend" as const,
+      id: result.id,
+      status: result.status,
+      providerResponse: result.result,
+      from: primaryFrom,
+      replyTo,
+      to: input.customerEmail
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const shouldRetryWithFallback =
+      Boolean(fallbackFromEmail && fallbackFrom) &&
+      !fallbackFrom!.toLowerCase().includes(fromEmail.toLowerCase()) &&
+      errorMessage.toLowerCase().includes("domain is not verified");
+
+    if (!shouldRetryWithFallback) {
+      throw error;
+    }
+
+    const fallbackResult = await sendViaResendWithRetry({
+      resendApiKey,
+      from: fallbackFrom!,
+      to: [input.customerEmail],
+      replyTo,
+      subject: content.subject,
+      html: content.html,
+      text: content.text
+    });
+
+    return {
+      mode: "resend-fallback" as const,
+      id: fallbackResult.id,
+      status: fallbackResult.status,
+      providerResponse: fallbackResult.result,
+      from: fallbackFrom!,
+      replyTo,
+      to: input.customerEmail
     };
   }
 }

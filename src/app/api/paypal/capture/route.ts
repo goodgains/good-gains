@@ -5,7 +5,9 @@ import {
   DOWNLOAD_ACCESS_COOKIE
 } from "@/lib/delivery";
 import { incrementCouponUsage } from "@/lib/coupons";
+import { logSupabaseDeliveryEvent } from "@/lib/customer-db";
 import { sendPurchaseEmail } from "@/lib/email";
+import { siteConfig } from "@/lib/site";
 import { capturePayPalOrder, getBaseUrl, getPayPalOrder, parsePayPalCustomId } from "@/lib/paypal";
 
 export async function GET(request: Request) {
@@ -47,6 +49,12 @@ export async function GET(request: Request) {
       refreshedOrder.payer?.email_address ??
       order.payer?.email_address ??
       finalOrder.payer?.email_address;
+    const amountUsd = Number.parseFloat(
+      refreshedOrder.purchase_units?.[0]?.amount?.value ??
+        order.purchase_units?.[0]?.amount?.value ??
+        finalOrder.purchase_units?.[0]?.amount?.value ??
+        "0"
+    );
     const customerName = [
       refreshedOrder.payer?.name?.given_name ?? order.payer?.name?.given_name ?? finalOrder.payer?.name?.given_name,
       refreshedOrder.payer?.name?.surname ?? order.payer?.name?.surname ?? finalOrder.payer?.name?.surname
@@ -65,6 +73,8 @@ export async function GET(request: Request) {
       customerEmail,
       customerName,
       productName,
+      couponCode: couponCode ?? null,
+      amountUsd: Number.isFinite(amountUsd) ? amountUsd : null,
       createdAt:
         refreshedOrder.create_time ??
         order.create_time ??
@@ -96,7 +106,7 @@ export async function GET(request: Request) {
       const emailResult = await sendPurchaseEmail(record);
       console.log("Email sent successfully", {
         provider: emailResult.mode,
-        messageId: emailResult.id,
+        resendMessageId: emailResult.id,
         status: "status" in emailResult ? emailResult.status : null,
         from: emailResult.from,
         replyTo: emailResult.replyTo,
@@ -105,12 +115,38 @@ export async function GET(request: Request) {
         product: record.purchasedProductName,
         licenseKey: record.licenseKey
       });
+      await logSupabaseDeliveryEvent({
+        customerId: record.customerId,
+        orderId: record.orderId,
+        licenseId: record.licenseId,
+        context: "paypal_capture",
+        to: record.customerEmail,
+        from: emailResult.from,
+        replyTo: emailResult.replyTo,
+        provider: "resend",
+        sent: true,
+        messageId: emailResult.id ?? null,
+        providerResponse: "providerResponse" in emailResult ? emailResult.providerResponse : null
+      });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("Email failed", {
         to: record.customerEmail,
         product: record.purchasedProductName,
         licenseKey: record.licenseKey,
-        error: error instanceof Error ? error.message : String(error)
+        resendError: errorMessage
+      });
+      await logSupabaseDeliveryEvent({
+        customerId: record.customerId,
+        orderId: record.orderId,
+        licenseId: record.licenseId,
+        context: "paypal_capture",
+        to: record.customerEmail,
+        from: process.env.RESEND_FROM_EMAIL?.trim() || siteConfig.supportEmail,
+        replyTo: siteConfig.supportEmail,
+        provider: "resend",
+        sent: false,
+        error: errorMessage
       });
     }
 

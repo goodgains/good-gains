@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { verifySupabaseLicense } from "@/lib/customer-db";
 import type { DeliveryRecord } from "@/lib/delivery";
 import { bundle, getProductBySlug, products } from "@/lib/products";
 
@@ -358,6 +359,23 @@ export async function verifyProductLicense(input: { licenseKey?: string; product
 
   if (!normalizedKey || !normalizedProduct) {
     return null;
+  }
+
+  try {
+    const supabaseMatch = await verifySupabaseLicense({
+      licenseKey: normalizedKey,
+      product: normalizedProduct
+    });
+
+    if (supabaseMatch !== undefined) {
+      return supabaseMatch;
+    }
+  } catch (error) {
+    console.error("Supabase license verification failed", {
+      licenseKeyPrefix: normalizedKey.slice(0, 12),
+      product: normalizedProduct,
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 
   const shortLicense = parseShortLicenseKey(normalizedKey);

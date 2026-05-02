@@ -6,6 +6,7 @@ import {
   DOWNLOAD_ACCESS_COOKIE
 } from "@/lib/delivery";
 import { incrementCouponUsage, normalizeCouponCode, validateCouponForProduct } from "@/lib/coupons";
+import { logSupabaseDeliveryEvent } from "@/lib/customer-db";
 import { sendPurchaseEmail } from "@/lib/email";
 import { bundle, products } from "@/lib/products";
 import { siteConfig } from "@/lib/site";
@@ -102,7 +103,9 @@ export async function POST(request: Request) {
       paymentStatus: "COMPLETED",
       customerEmail,
       customerName: "Coupon Access",
-      productName
+      productName,
+      couponCode: validation.coupon.code,
+      amountUsd: 0
     });
 
     try {
@@ -138,6 +141,19 @@ export async function POST(request: Request) {
         to: record.customerEmail,
         product: record.purchasedProductName,
         licenseKey: record.licenseKey
+      });
+      await logSupabaseDeliveryEvent({
+        customerId: record.customerId,
+        orderId: record.orderId,
+        licenseId: record.licenseId,
+        context: "free_checkout",
+        to: record.customerEmail,
+        from: emailResult.from,
+        replyTo: emailResult.replyTo,
+        provider: "resend",
+        sent: true,
+        messageId: emailResult.id ?? null,
+        providerResponse: "providerResponse" in emailResult ? emailResult.providerResponse : null
       });
 
       const response = NextResponse.json({
@@ -179,6 +195,18 @@ export async function POST(request: Request) {
         product: record.purchasedProductName,
         licenseKey: record.licenseKey,
         resendError: errorMessage
+      });
+      await logSupabaseDeliveryEvent({
+        customerId: record.customerId,
+        orderId: record.orderId,
+        licenseId: record.licenseId,
+        context: "free_checkout",
+        to: record.customerEmail,
+        from: process.env.RESEND_FROM_EMAIL?.trim() || siteConfig.supportEmail,
+        replyTo: siteConfig.supportEmail,
+        provider: "resend",
+        sent: false,
+        error: errorMessage
       });
 
       const response = NextResponse.json({

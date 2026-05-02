@@ -30,6 +30,10 @@ type PayPalOrderDetailsResponse = {
   };
   purchase_units?: Array<{
     custom_id?: string;
+    amount?: {
+      value?: string;
+      currency_code?: string;
+    };
   }>;
 };
 
@@ -47,6 +51,10 @@ type PayPalCaptureOrderResponse = {
   };
   purchase_units?: Array<{
     custom_id?: string;
+    amount?: {
+      value?: string;
+      currency_code?: string;
+    };
   }>;
 };
 

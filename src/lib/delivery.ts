@@ -1,6 +1,12 @@
 import crypto from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import {
+  getSupabaseDeliveryBySessionId,
+  getSupabaseDeliveryByToken,
+  incrementSupabaseDownloadCount,
+  persistSupabaseDeliveryRecord
+} from "@/lib/customer-db";
 import { createLicenseKey, verifyProductLicense } from "@/lib/licenses";
 import { bundle, getProductBySlug, products } from "@/lib/products";
 import { getReleaseBySlug } from "@/lib/downloads";
@@ -8,6 +14,9 @@ import { getBaseUrl } from "@/lib/paypal";
 
 export type DeliveryRecord = {
   id: string;
+  customerId?: string;
+  orderId?: string;
+  licenseId?: string;
   token: string;
   stripeSessionId: string;
   paymentProvider: "paypal" | "stripe" | "demo" | "coupon";
@@ -17,12 +26,13 @@ export type DeliveryRecord = {
   purchasedProductName: string;
   purchasedSlugs: string[];
   licenseKey: string;
-  status: "active";
+  status: "active" | "disabled" | "refunded";
   expiresAt: string | null;
   maxDownloads: number;
   downloadCount: number;
   createdAt: string;
   updatedAt: string;
+  couponCode?: string | null;
 };
 
 type StatelessDeliveryPayload = {
@@ -234,6 +244,19 @@ export function resolvePurchase(productName: string) {
 }
 
 export async function getDeliveryByToken(token: string) {
+  try {
+    const supabaseRecord = await getSupabaseDeliveryByToken(token);
+
+    if (supabaseRecord) {
+      return supabaseRecord;
+    }
+  } catch (error) {
+    console.error("Supabase delivery lookup by token failed", {
+      tokenPrefix: token.slice(0, 24),
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+
   const statelessRecord = parseStatelessDeliveryToken(token);
 
   if (statelessRecord) {
@@ -245,6 +268,19 @@ export async function getDeliveryByToken(token: string) {
 }
 
 export async function getDeliveryBySessionId(sessionId: string) {
+  try {
+    const supabaseRecord = await getSupabaseDeliveryBySessionId(sessionId);
+
+    if (supabaseRecord) {
+      return supabaseRecord;
+    }
+  } catch (error) {
+    console.error("Supabase delivery lookup by session id failed", {
+      sessionId,
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+
   const records = await readLegacyRecords();
   return records.find((record) => record.stripeSessionId === sessionId) ?? null;
 }
@@ -259,6 +295,8 @@ export async function createDeliveryRecord(input: {
   createdAt?: string;
   expiresAt?: string | null;
   maxDownloads?: number;
+  couponCode?: string | null;
+  amountUsd?: number | null;
 }) {
   const resolved = resolvePurchase(input.productName);
   const customerEmail = normalizeEmail(input.customerEmail);
@@ -291,10 +329,29 @@ export async function createDeliveryRecord(input: {
     maxDownloads: input.maxDownloads ?? DEFAULT_MAX_DOWNLOADS,
     downloadCount: 0,
     createdAt: timestamp,
-    updatedAt: timestamp
+    updatedAt: timestamp,
+    couponCode: input.couponCode ?? null
   };
 
   record.token = buildStatelessDeliveryToken(buildStatelessDeliveryPayload(record));
+  try {
+    const persistedIds = await persistSupabaseDeliveryRecord(record, {
+      amountUsd: input.amountUsd ?? null
+    });
+
+    if (persistedIds) {
+      record.customerId = persistedIds.customerId;
+      record.orderId = persistedIds.orderId;
+      record.licenseId = persistedIds.licenseId;
+    }
+  } catch (error) {
+    console.error("Supabase delivery persistence failed", {
+      sessionId: input.stripeSessionId,
+      customerEmail,
+      productName: resolved.name,
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
 
   return record;
 }
@@ -460,6 +517,19 @@ export async function verifyDownloadAccessByEmail(token: string, email: string) 
 }
 
 export async function incrementDownloadCount(token: string) {
+  try {
+    const supabaseRecord = await incrementSupabaseDownloadCount(token);
+
+    if (supabaseRecord) {
+      return supabaseRecord;
+    }
+  } catch (error) {
+    console.error("Supabase download count increment failed", {
+      tokenPrefix: token.slice(0, 24),
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+
   const record = await getValidatedDeliveryByToken(token);
 
   if (!record) {
