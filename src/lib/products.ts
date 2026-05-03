@@ -180,8 +180,7 @@ export const products: Product[] = [
       "Asia session highs and lows mapped automatically",
       "London session levels tracked in real time",
       "New York session highs and lows plotted automatically",
-      "Clean labels for fast reading",
-      "Minimal chart clutter"
+      "Clean labels and lightweight chart display"
     ],
     quickBullets: ["Auto-marked Asia, London & New York session levels", "Clear session structure directly on chart", "Understand where liquidity is building"],
     idealFor: ["Session-based strategy traders", "Breakout and sweep setups", "Clean chart layouts", "Built for traders who rely on session structure and liquidity reactions."],

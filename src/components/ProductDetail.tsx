@@ -102,7 +102,7 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
     : isDailyAccountLock
       ? "Lock your day. Protect your account from yourself."
     : isSessionHighLow
-      ? "Mark Asia & London Levels Before the Move Happens"
+      ? "Mark Asia, London & New York Levels Before the Move Happens"
     : isSmiPrecision
       ? "Spot reversals before the crowd"
       : currentName;
