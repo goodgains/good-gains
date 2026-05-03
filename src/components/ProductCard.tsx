@@ -59,7 +59,7 @@ export function ProductCard({ product }: { product: Product }) {
                 <span className="font-semibold text-white">${product.twoDevicePrice}</span>
               </div>
               <p className="mt-1 text-xs leading-6 text-zinc-500">Perfect if you trade from multiple setups</p>
-              <p className="text-xs leading-6 text-emerald-200/90">Save ${deviceSavings} vs buying twice</p>
+              <p className="text-xs leading-6 text-emerald-200/90">Save ${deviceSavings} when trading from multiple setups</p>
             </div>
           </div>
           <p className="mt-2 text-sm font-medium text-emerald-200">Instant download after purchase</p>

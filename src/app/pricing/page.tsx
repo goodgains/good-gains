@@ -55,7 +55,7 @@ export default function PricingPage() {
                           </span>
                         </div>
                         <p className="mt-1 text-xs leading-6 text-zinc-500">Perfect if you trade from multiple setups</p>
-                        <p className="text-xs leading-6 text-emerald-200/90">Save ${getProductDeviceSavings(product)} vs buying twice</p>
+                        <p className="text-xs leading-6 text-emerald-200/90">Save ${getProductDeviceSavings(product)} when trading from multiple setups</p>
                       </div>
                       <span className="font-semibold text-white">${product.twoDevicePrice}</span>
                     </div>

@@ -171,7 +171,7 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
                 </span>
               </div>
               <p className="mt-1 text-xs leading-6 text-zinc-500">Perfect if you trade from multiple setups</p>
-              <p className="text-xs leading-6 text-emerald-200/90">Save ${deviceSavings} vs buying twice</p>
+              <p className="text-xs leading-6 text-emerald-200/90">Save ${deviceSavings} when trading from multiple setups</p>
             </div>
             <span className="font-semibold text-white">${currentProduct.twoDevicePrice}</span>
           </div>

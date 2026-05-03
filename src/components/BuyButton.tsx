@@ -263,7 +263,7 @@ export function BuyButton({
                       {option.badge ? <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-emerald-200/90">{option.badge}</p> : null}
                       <p className={`mt-1 text-[11px] leading-5 ${isSelected ? "text-zinc-200" : "text-zinc-500"}`}>{option.note}</p>
                       {option.savings ? (
-                        <p className="mt-1 text-[11px] leading-5 text-emerald-200/90">Save ${option.savings} vs buying twice</p>
+                        <p className="mt-1 text-[11px] leading-5 text-emerald-200/90">Save ${option.savings} when trading from multiple setups</p>
                       ) : null}
                     </button>
                   );
