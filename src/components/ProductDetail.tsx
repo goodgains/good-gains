@@ -146,7 +146,7 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
       ? "Instant download for NinjaTrader 8. Lock your day, block new trades, and protect profits after your session ends."
     : isSmiPrecision
       ? "Instant download for NinjaTrader 8 with a clean momentum workflow for reversals, confirmations, and continuation setups."
-      : "Prepared for PayPal Checkout, responsive purchase flow, and future license verification support.";
+      : "Prepared for PayPal and Paddle checkout, responsive purchase flow, and license verification support.";
 
   const purchaseCard = (
     <div className="rounded-[2rem] border border-white/10 bg-zinc-950/85 p-6">

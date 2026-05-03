@@ -2,10 +2,17 @@ import { NextResponse } from "next/server";
 import { getManagedLicenseOwnership } from "@/lib/customer-db";
 import { bundle, bundleDeviceUpgrade } from "@/lib/products";
 import { createPayPalOrder, encodePayPalCustomId, isPayPalConfigured } from "@/lib/paypal";
+import {
+  createPaddleTransaction,
+  encodePaddleCustomData,
+  isPaddleConfigured
+} from "@/lib/paddle";
+import { getBaseUrl } from "@/lib/base-url";
 
 type BundleUpgradeBody = {
   customerEmail?: string;
   licenseKey?: string;
+  paymentMethod?: "paypal" | "paddle";
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -14,6 +21,7 @@ export async function POST(request: Request) {
   const body = (await request.json()) as BundleUpgradeBody;
   const customerEmail = body.customerEmail?.trim().toLowerCase() ?? "";
   const licenseKey = body.licenseKey?.trim().toUpperCase() ?? "";
+  const paymentMethod = body.paymentMethod === "paddle" ? "paddle" : "paypal";
 
   if (!EMAIL_PATTERN.test(customerEmail) || !licenseKey) {
     return NextResponse.json(
@@ -48,30 +56,59 @@ export async function POST(request: Request) {
     });
   }
 
-  if (!isPayPalConfigured()) {
-    return NextResponse.json(
-      {
-        error:
-          "PayPal checkout is not configured yet. Add PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET before using bundle upgrades."
-      },
-      { status: 503 }
-    );
-  }
-
   try {
-    const order = await createPayPalOrder({
-      customId: encodePayPalCustomId({
+    if (paymentMethod === "paypal") {
+      if (!isPayPalConfigured()) {
+        return NextResponse.json(
+          {
+            error:
+              "PayPal checkout is not configured yet. Add PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET before using bundle upgrades."
+          },
+          { status: 503 }
+        );
+      }
+
+      const order = await createPayPalOrder({
+        customId: encodePayPalCustomId({
+          productName: bundle.name,
+          customerEmail,
+          checkoutType: "bundle_device_upgrade",
+          licenseKey,
+          upgradeToDevices: 2
+        }),
+        description: `${bundleDeviceUpgrade.name} for ${bundle.name}`,
+        amount: bundleDeviceUpgrade.price
+      });
+
+      return NextResponse.json({ url: order.approveUrl });
+    }
+
+    if (!isPaddleConfigured()) {
+      return NextResponse.json(
+        {
+          error:
+            "Paddle checkout is not configured yet. Add PADDLE_API_KEY and PADDLE_CLIENT_TOKEN before using bundle upgrades."
+        },
+        { status: 503 }
+      );
+    }
+
+    const transaction = await createPaddleTransaction({
+      productName: bundleDeviceUpgrade.name,
+      description: `${bundleDeviceUpgrade.name} for ${bundle.name}`,
+      amount: bundleDeviceUpgrade.price,
+      customData: encodePaddleCustomData({
         productName: bundle.name,
         customerEmail,
         checkoutType: "bundle_device_upgrade",
         licenseKey,
         upgradeToDevices: 2
-      }),
-      description: `${bundleDeviceUpgrade.name} for ${bundle.name}`,
-      amount: bundleDeviceUpgrade.price
+      })
     });
 
-    return NextResponse.json({ url: order.approveUrl });
+    return NextResponse.json({
+      url: `${getBaseUrl()}/checkout/paddle?transaction_id=${encodeURIComponent(transaction.id)}`
+    });
   } catch (error) {
     return NextResponse.json(
       {

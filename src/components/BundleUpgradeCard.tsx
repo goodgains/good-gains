@@ -24,6 +24,7 @@ export function BundleUpgradeCard({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "paddle">("paypal");
 
   const normalizedEmail = useMemo(() => customerEmail.trim().toLowerCase(), [customerEmail]);
   const normalizedLicenseKey = useMemo(() => licenseKey.trim().toUpperCase(), [licenseKey]);
@@ -52,7 +53,8 @@ export function BundleUpgradeCard({
         },
         body: JSON.stringify({
           customerEmail: normalizedEmail,
-          licenseKey: normalizedLicenseKey
+          licenseKey: normalizedLicenseKey,
+          paymentMethod
         })
       });
 
@@ -135,6 +137,41 @@ export function BundleUpgradeCard({
           </div>
         </div>
       )}
+
+      <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-black/35 p-4">
+        <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">Payment method</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {([
+            {
+              value: "paypal" as const,
+              label: "PayPal",
+              note: "Use the existing PayPal checkout flow"
+            },
+            {
+              value: "paddle" as const,
+              label: "Card / Paddle",
+              note: "Pay by card with Paddle checkout"
+            }
+          ]).map((option) => {
+            const isSelected = paymentMethod === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setPaymentMethod(option.value)}
+                className={`rounded-2xl border px-4 py-3 text-left transition ${
+                  isSelected
+                    ? "border-emerald-400/40 bg-emerald-400/10 text-white shadow-[0_0_24px_rgba(74,222,128,0.08)]"
+                    : "border-white/10 bg-black/25 text-zinc-300 hover:border-white/20 hover:text-white"
+                }`}
+              >
+                <p className="text-sm font-semibold">{option.label}</p>
+                <p className={`mt-1 text-[11px] leading-5 ${isSelected ? "text-zinc-200" : "text-zinc-500"}`}>{option.note}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <button

@@ -19,7 +19,7 @@ export type DeliveryRecord = {
   licenseId?: string;
   token: string;
   stripeSessionId: string;
-  paymentProvider: "paypal" | "stripe" | "demo" | "coupon";
+  paymentProvider: "paypal" | "paddle" | "stripe" | "demo" | "coupon";
   paymentStatus: "COMPLETED" | "PENDING" | "FAILED";
   customerEmail: string;
   customerName: string;

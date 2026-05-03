@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { normalizeCouponCode, validateCouponForProduct } from "@/lib/coupons";
 import { bundle, getProductPrice, normalizeDeviceCount, products } from "@/lib/products";
 import { createPayPalOrder, encodePayPalCustomId, isPayPalConfigured } from "@/lib/paypal";
+import {
+  createPaddleTransaction,
+  encodePaddleCustomData,
+  isPaddleConfigured
+} from "@/lib/paddle";
+import { getBaseUrl } from "@/lib/base-url";
 
 type CheckoutBody = {
   productName?: string;
@@ -10,6 +16,7 @@ type CheckoutBody = {
   couponCode?: string;
   customerEmail?: string;
   deviceCount?: number;
+  paymentMethod?: "paypal" | "paddle";
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -22,6 +29,7 @@ export async function POST(request: Request) {
   const couponCode = normalizeCouponCode(body.couponCode);
   const customerEmail = body.customerEmail?.trim().toLowerCase();
   const deviceCount = normalizeDeviceCount(body.deviceCount);
+  const paymentMethod = body.paymentMethod === "paddle" ? "paddle" : "paypal";
 
   if (!productName || !priceEnvName || !productId || !customerEmail) {
     return NextResponse.json({ error: "Missing checkout product data." }, { status: 400 });
@@ -81,31 +89,60 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!isPayPalConfigured()) {
+    if (paymentMethod === "paypal") {
+      if (!isPayPalConfigured()) {
+        return NextResponse.json(
+          {
+            error:
+              "PayPal checkout is not configured yet. Add PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET before using Buy Now."
+          },
+          { status: 503 }
+        );
+      }
+
+      const order = await createPayPalOrder({
+        customId: encodePayPalCustomId({
+          productName,
+          couponCode: appliedCouponCode || undefined,
+          customerEmail,
+          deviceCount: isBundleCheckout ? 1 : deviceCount
+        }),
+        description: matchedProduct.description,
+        amount: finalPrice
+      });
+
+      return NextResponse.json({ url: order.approveUrl });
+    }
+
+    if (!isPaddleConfigured()) {
       return NextResponse.json(
         {
           error:
-            "PayPal checkout is not configured yet. Add PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET before using Buy Now."
+            "Paddle checkout is not configured yet. Add PADDLE_API_KEY and PADDLE_CLIENT_TOKEN before using card checkout."
         },
         { status: 503 }
       );
     }
 
-    const order = await createPayPalOrder({
-      customId: encodePayPalCustomId({
-        productName,
-        couponCode: appliedCouponCode || undefined,
-        customerEmail,
-        deviceCount: isBundleCheckout ? 1 : deviceCount
-      }),
+    const transaction = await createPaddleTransaction({
+      productName,
       description: matchedProduct.description,
-      amount: finalPrice
+      amount: finalPrice,
+      customData: encodePaddleCustomData({
+        productName,
+        couponCode: appliedCouponCode,
+        customerEmail,
+        deviceCount: isBundleCheckout ? 1 : deviceCount,
+        checkoutType: "standard"
+      })
     });
 
-    return NextResponse.json({ url: order.approveUrl });
+    return NextResponse.json({
+      url: `${getBaseUrl()}/checkout/paddle?transaction_id=${encodeURIComponent(transaction.id)}`
+    });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to create PayPal checkout session." },
+      { error: error instanceof Error ? error.message : "Unable to start checkout." },
       { status: 500 }
     );
   }

@@ -10,7 +10,7 @@ import { products } from "@/lib/products";
 export default function HomePage() {
   const trustItems = [
     { title: "Instant Download", detail: "Immediate access after checkout", icon: "DL" },
-    { title: "Secure Payment", detail: "PayPal protected checkout", icon: "SC" },
+    { title: "Secure Payment", detail: "PayPal or card checkout", icon: "SC" },
     { title: "NinjaTrader 8 Compatible", detail: "Built specifically for NT8 workflows", icon: "NT" },
     { title: "Built for Futures Traders", detail: "Focused on live execution and risk", icon: "F" }
   ];

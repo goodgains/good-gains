@@ -14,7 +14,7 @@ export function PaymentTrust() {
         />
       </div>
       <p className="text-[11px] font-medium leading-[1.25] text-zinc-300/80">
-        Secure checkout via PayPal
+        Secure checkout via PayPal or Paddle
       </p>
     </div>
   );
