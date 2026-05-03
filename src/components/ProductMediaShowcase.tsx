@@ -12,6 +12,7 @@ type ShowcaseSection = {
   image: string;
   title: string;
   text: string;
+  alt?: string;
 };
 
 const rrPanelSections: ShowcaseSection[] = [
@@ -85,6 +86,16 @@ const dailyAccountLockSections: ShowcaseSection[] = [
     image: "/images/daily account lock pic/dal-3-clean.jpg",
     title: "Clear locked status — no mistakes",
     text: "Visual confirmation ensures you know exactly when trading is disabled."
+  }
+];
+
+const sessionHighLowSections: ShowcaseSection[] = [
+  {
+    eyebrow: "SCREENSHOTS & DEMO",
+    image: "/images/seson pic/ss-1.jpg",
+    title: "See Asia and London session levels directly on the chart",
+    text: "This real NinjaTrader example keeps the focus on the GG Session High/Low Indicator. The GG RR Trade Panel is shown only as a supporting trade-planning example around the same session structure.",
+    alt: "GG Session High Low Indicator NinjaTrader 8 screenshot showing Asia Low and London Low session levels with risk reward trade setup"
   }
 ];
 
@@ -178,7 +189,7 @@ function SmiScreenshotFrame({ section, productName, priority, onOpen }: { sectio
       </div>
       <button type="button" onClick={() => onOpen(section)} className="group block w-full cursor-pointer text-left" aria-label={`Open larger view for ${section.title}`}>
         <div className="relative border-t border-white/10 bg-black p-3 md:p-4">
-          <Image src={section.image} alt={`${productName} ${section.title}`} width={1800} height={1200} className="h-auto w-full object-contain object-center" sizes="(max-width: 1024px) 100vw, 980px" priority={priority} />
+          <Image src={section.image} alt={section.alt ?? `${productName} ${section.title}`} width={1800} height={1200} className="h-auto w-full object-contain object-center" sizes="(max-width: 1024px) 100vw, 980px" priority={priority} />
           <div className="absolute right-5 top-5 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-100">Click to enlarge</div>
         </div>
       </button>
@@ -472,6 +483,29 @@ function DailyAccountLockShowcase({ product, onOpen }: { product: Product; onOpe
   );
 }
 
+function SessionHighLowShowcase({ product, onOpen }: { product: Product; onOpen: (section: ShowcaseSection) => void }) {
+  const primarySection = sessionHighLowSections[0];
+
+  return (
+    <section className="space-y-8 rounded-[2rem] border border-white/10 bg-zinc-950/70 px-5 pb-5 pt-2 md:px-8 md:pb-8 md:pt-3 xl:px-10 xl:pb-10 xl:pt-3">
+      <div className="space-y-8">
+        <SmiScreenshotFrame section={primarySection} productName={product.name} priority onOpen={onOpen} />
+        <article className="rounded-[2rem] border border-white/10 bg-black/35 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_0_34px_rgba(74,222,128,0.05)] md:p-8">
+          <p className="text-xs uppercase tracking-[0.24em] text-emerald-300">REAL CHART CONTEXT</p>
+          <div className="mt-4 space-y-5">
+            <p className="text-base leading-8 text-zinc-200">
+              Real NinjaTrader chart example using the GG Session High/Low Indicator together with the GG RR Trade Panel.
+            </p>
+            <p className="text-base leading-8 text-zinc-300">
+              The session levels help mark important Asia and London highs/lows, making it easier to frame liquidity areas, reactions, and possible reversal zones before entering a trade.
+            </p>
+          </div>
+        </article>
+      </div>
+    </section>
+  );
+}
+
 export function ProductMediaShowcase({ product }: { product: Product }) {
   const [activeSection, setActiveSection] = useState<ShowcaseSection | null>(null);
 
@@ -515,6 +549,15 @@ export function ProductMediaShowcase({ product }: { product: Product }) {
     return (
       <>
         <DailyAccountLockShowcase product={product} onOpen={setActiveSection} />
+        {activeSection ? <ProductLightbox image={activeSection.image} title={activeSection.title} onClose={() => setActiveSection(null)} /> : null}
+      </>
+    );
+  }
+
+  if (product.slug === "session-high-low-indicator") {
+    return (
+      <>
+        <SessionHighLowShowcase product={product} onOpen={setActiveSection} />
         {activeSection ? <ProductLightbox image={activeSection.image} title={activeSection.title} onClose={() => setActiveSection(null)} /> : null}
       </>
     );
