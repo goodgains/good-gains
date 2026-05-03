@@ -218,10 +218,10 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
 
   if (isRrPanel && currentProduct) {
     return (
-      <div className="py-16 md:py-20">
-        <Container className="space-y-10">
-          <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
-            <div className="space-y-4">
+      <div className="py-12 md:py-16">
+        <Container className="space-y-8">
+          <div className="relative">
+            <div className="space-y-6 xl:pr-[392px]">
               <div className="space-y-4">
                 <Badge>{currentCategory}</Badge>
                 <h1 className="max-w-4xl text-4xl font-semibold tracking-tight text-white md:text-5xl">{heroTitle}</h1>
@@ -229,23 +229,23 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
                 <p className="max-w-4xl text-lg font-semibold leading-8 text-white">{heroBenefitLine}</p>
                 <p className="text-sm font-medium text-emerald-200">Start improving your execution today.</p>
               </div>
+              <article className="rounded-[2rem] border border-white/10 bg-zinc-950/70 p-6 shadow-[0_0_24px_rgba(74,222,128,0.05)] md:p-8">
+                <p className="text-2xl font-semibold text-white">See your exact risk in real time</p>
+                <p className="mt-3 text-base leading-7 text-zinc-300">Know exactly how much you're risking — and how much you can make — before you enter.</p>
+                <div className="mx-auto mt-5 w-full max-w-[1100px] overflow-hidden rounded-[1.25rem] border border-white/10 bg-black/45 p-3 md:p-4">
+                  <video
+                    src="/videos/rr-trade-demo.mp4"
+                    controls
+                    playsInline
+                    style={{ width: "100%", height: "auto", objectFit: "contain", borderRadius: "16px", display: "block" }}
+                  />
+                </div>
+                <p className="mt-4 text-base leading-7 text-zinc-300">Move your stop — and instantly see how your risk changes.</p>
+                <p className="mt-2 text-sm font-medium text-zinc-400">Click play to watch the full 38-second demo.</p>
+              </article>
             </div>
-            <aside className="space-y-5 xl:sticky xl:top-28 xl:h-fit">{purchaseCard}</aside>
+            <aside className="mt-8 space-y-5 xl:absolute xl:right-0 xl:top-0 xl:mt-0 xl:w-[360px]">{purchaseCard}</aside>
           </div>
-          <article className="rounded-[2rem] border border-white/10 bg-zinc-950/70 p-6 shadow-[0_0_24px_rgba(74,222,128,0.05)] md:p-8">
-            <p className="text-2xl font-semibold text-white">See your exact risk in real time</p>
-            <p className="mt-3 text-base leading-7 text-zinc-300">Know exactly how much you're risking — and how much you can make — before you enter.</p>
-            <div className="mx-auto mt-5 w-full max-w-[1100px] overflow-hidden rounded-[1.25rem] border border-white/10 bg-black/45 p-3 md:p-4">
-              <video
-                src="/videos/rr-trade-demo.mp4"
-                controls
-                playsInline
-                style={{ width: "100%", height: "auto", objectFit: "contain", borderRadius: "16px", display: "block" }}
-              />
-            </div>
-            <p className="mt-4 text-base leading-7 text-zinc-300">Move your stop — and instantly see how your risk changes.</p>
-            <p className="mt-2 text-sm font-medium text-zinc-400">Click play to watch the full 38-second demo.</p>
-          </article>
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="rounded-[2rem] border border-white/10 bg-zinc-950/70 p-6">
               <h2 className="text-2xl font-semibold text-white">What you get</h2>
@@ -290,16 +290,18 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
     return (
       <div className="py-10 md:py-12">
         <Container className="!max-w-[1360px] space-y-5 md:space-y-6">
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,980px)_320px] xl:items-start xl:justify-between">
-            <div className="space-y-4">
-              <Badge>{currentCategory}</Badge>
-              <h1 className="max-w-5xl text-4xl font-semibold tracking-tight text-white md:text-5xl">{heroTitle}</h1>
-              <p className="max-w-5xl text-lg leading-8 text-zinc-300">{heroDescription}</p>
-              <p className="max-w-5xl pt-1 text-base font-medium leading-7 text-emerald-100/90">Most traders enter too late. GG SMI Precision shows the shift before the move.</p>
+          <div className="relative">
+            <div className="space-y-5 xl:pr-[352px]">
+              <div className="space-y-4">
+                <Badge>{currentCategory}</Badge>
+                <h1 className="max-w-5xl text-4xl font-semibold tracking-tight text-white md:text-5xl">{heroTitle}</h1>
+                <p className="max-w-5xl text-lg leading-8 text-zinc-300">{heroDescription}</p>
+                <p className="max-w-5xl pt-1 text-base font-medium leading-7 text-emerald-100/90">Most traders enter too late. GG SMI Precision shows the shift before the move.</p>
+              </div>
+              <ProductMediaShowcase product={currentProduct} />
             </div>
-            <aside className="space-y-5 xl:sticky xl:top-28 xl:h-fit">{purchaseCard}</aside>
+            <aside className="mt-8 space-y-5 xl:absolute xl:right-0 xl:top-0 xl:mt-0 xl:w-[320px]">{purchaseCard}</aside>
           </div>
-          <ProductMediaShowcase product={currentProduct} />
           <div className="grid gap-6 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
             <div className="rounded-[2rem] border border-white/10 bg-zinc-950/70 p-6">
               <h2 className="text-2xl font-semibold text-white">Lifetime Updates</h2>
@@ -317,16 +319,18 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
     return (
       <div className="py-10 md:py-12">
         <Container className="!max-w-[1360px] space-y-6 md:space-y-7">
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,980px)_320px] xl:items-start xl:justify-between">
-            <div className="space-y-4">
-              <Badge>{currentCategory}</Badge>
-              <h1 className="max-w-5xl text-4xl font-semibold tracking-tight text-white md:text-5xl">{heroTitle}</h1>
-              <p className="max-w-5xl text-lg leading-8 text-zinc-300">{heroDescription}</p>
-              <p className="max-w-5xl pt-1 text-base font-medium leading-7 text-rose-100/90">One bad session can wipe your account. This stops it.</p>
+          <div className="relative">
+            <div className="space-y-6 xl:pr-[352px]">
+              <div className="space-y-4">
+                <Badge>{currentCategory}</Badge>
+                <h1 className="max-w-5xl text-4xl font-semibold tracking-tight text-white md:text-5xl">{heroTitle}</h1>
+                <p className="max-w-5xl text-lg leading-8 text-zinc-300">{heroDescription}</p>
+                <p className="max-w-5xl pt-1 text-base font-medium leading-7 text-rose-100/90">One bad session can wipe your account. This stops it.</p>
+              </div>
+              <ProductMediaShowcase product={currentProduct} />
             </div>
-            <aside className="space-y-5 xl:sticky xl:top-28 xl:h-fit">{purchaseCard}</aside>
+            <aside className="mt-8 space-y-5 xl:absolute xl:right-0 xl:top-0 xl:mt-0 xl:w-[320px]">{purchaseCard}</aside>
           </div>
-          <ProductMediaShowcase product={currentProduct} />
           <div className="grid gap-6 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
             <div className="rounded-[2rem] border border-white/10 bg-zinc-950/70 p-6">
               <h2 className="text-2xl font-semibold text-white">Lifetime Updates</h2>
@@ -341,9 +345,10 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
   }
 
   return (
-    <div className="py-16 md:py-20">
-      <Container className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="space-y-8">
+    <div className="py-12 md:py-16">
+      <Container className="space-y-8">
+        <div className="relative">
+          <div className="space-y-8 lg:pr-[392px]">
           <div className="space-y-4">
             <Badge>{currentCategory}</Badge>
             <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">{heroTitle}</h1>
@@ -396,10 +401,10 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
               ))}
             </ul>
           </div>
-          {currentProduct ? (
-            <ProductMediaShowcase product={currentProduct} />
-          ) : (
-            <div className="rounded-[2rem] border border-white/10 bg-zinc-950/70 p-6 md:p-8">
+            {currentProduct ? (
+              <ProductMediaShowcase product={currentProduct} />
+            ) : (
+              <div className="rounded-[2rem] border border-white/10 bg-zinc-950/70 p-6 md:p-8">
               <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
                 <div className="space-y-5">
                   <div>
@@ -443,8 +448,8 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+              </div>
+            )}
           <div className="rounded-[2rem] border border-white/10 bg-zinc-950/70 p-6">
             <h2 className="text-2xl font-semibold text-white">Lifetime Updates</h2>
             <p className="mt-4 text-base leading-8 text-zinc-300">Every purchase includes lifetime updates, continuous improvements, bug fixes, and new features. We actively develop and improve our tools over time.</p>
@@ -458,11 +463,12 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
               ))}
             </ul>
           </div>
+          </div>
+          <aside className="mt-8 space-y-5 lg:absolute lg:right-0 lg:top-0 lg:mt-0 lg:w-[360px]">
+            {purchaseCard}
+            <ProductSwitcher items={navigationItems} />
+          </aside>
         </div>
-        <aside className="space-y-5 lg:sticky lg:top-28 lg:h-fit">
-          {purchaseCard}
-          <ProductSwitcher items={navigationItems} />
-        </aside>
       </Container>
     </div>
   );
