@@ -49,11 +49,16 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
   const isRrPanel = currentProduct?.slug === "gg-rr-trade-panel";
   const isDailyAccountLock = currentProduct?.slug === "daily-account-lock-addon";
   const isSmiPrecision = currentProduct?.slug === "gg-stochastic-momentum-index";
+  const isSessionHighLow = currentProduct?.slug === "session-high-low-indicator";
 
   const whatYouGetBySlug: Record<string, string[]> = {
     "gg-rr-trade-panel": ["Full risk-reward planning panel", "Visual TP/SL zones on chart", "Live sync with orders", "Fast trade management tools"],
     "daily-account-lock-addon": ["Lock trading instantly", "Block new entries", "Flatten all positions", "Prevent overtrading"],
-    "session-high-low-indicator": ["Asia, London, New York levels", "Clean session visualization", "Better market structure clarity"],
+    "session-high-low-indicator": [
+      "Auto-marked Asia, London & New York session levels",
+      "Clear session structure directly on chart",
+      "Understand where liquidity is building"
+    ],
     "gg-stochastic-momentum-index": ["Momentum confirmation signals", "Overbought/oversold context", "Cleaner entry timing"]
   };
 
@@ -96,6 +101,8 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
     ? "Know exactly how much you're risking — before and during every trade"
     : isDailyAccountLock
       ? "Lock your day. Protect your account from yourself."
+    : isSessionHighLow
+      ? "Mark Asia & London Levels Before the Move Happens"
     : isSmiPrecision
       ? "Spot reversals before the crowd"
       : currentName;
@@ -105,6 +112,8 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
     ? "Plan entries, stop loss, and take profit visually - with real-time PnL before you even enter."
     : isDailyAccountLock
       ? "Automatically block trading after your session ends — no emotions, no revenge trading."
+    : isSessionHighLow
+      ? "Automatically plot key session levels so you can spot liquidity, reactions, and structure in real time."
     : isSmiPrecision
       ? "See momentum shift BEFORE price reacts — and stop entering trades too late."
       : currentDescription;
@@ -383,7 +392,11 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
                 </>
               ) : null}
             {showHeroBenefitLine ? <p className="max-w-3xl text-lg font-semibold leading-8 text-white">{heroBenefitLine}</p> : null}
-            {!bundleView ? <p className="text-sm font-medium text-emerald-200">Start improving your execution today.</p> : null}
+            {!bundleView ? (
+              <p className="text-sm font-medium text-emerald-200">
+                {isSessionHighLow ? "Built for traders who rely on session structure and liquidity reactions." : "Start improving your execution today."}
+              </p>
+            ) : null}
           </div>
           <div className="rounded-[2rem] border border-white/10 bg-zinc-950/70 p-6">
             <h2 className="text-2xl font-semibold text-white">{bundleView ? "Everything you need to trade properly" : "What you get"}</h2>
