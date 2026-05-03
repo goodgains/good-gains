@@ -2,9 +2,11 @@ import type { Route } from "next";
 import Link from "next/link";
 import { PaymentTrust } from "@/components/PaymentTrust";
 import { Badge } from "@/components/ui/Badge";
-import { Product } from "@/lib/products";
+import { getProductDeviceSavings, Product } from "@/lib/products";
 
 export function ProductCard({ product }: { product: Product }) {
+  const deviceSavings = getProductDeviceSavings(product);
+
   return (
     <article className="group flex h-full flex-col rounded-3xl border border-white/10 bg-zinc-950/80 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] transition hover:border-white/15 hover:bg-zinc-950">
       <div className="mb-5 flex items-start justify-between gap-4">
@@ -38,7 +40,28 @@ export function ProductCard({ product }: { product: Product }) {
         <div>
           <p className="text-sm uppercase tracking-[0.2em] text-zinc-500">Price</p>
           <p className="text-3xl font-semibold text-white">From ${product.price}</p>
-          <p className="mt-2 text-sm text-zinc-400">2-device license available for ${product.twoDevicePrice}</p>
+          <div className="mt-4 grid gap-2 text-sm">
+            <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-zinc-300">
+              <div className="flex items-center justify-between gap-4">
+                <span className="font-semibold text-white">1 Device</span>
+                <span className="font-semibold text-white">${product.price}</span>
+              </div>
+              <p className="mt-1 text-xs leading-6 text-zinc-500">Limited to one computer</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-zinc-300">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-white">2 Devices</span>
+                  <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
+                    Best Value
+                  </span>
+                </div>
+                <span className="font-semibold text-white">${product.twoDevicePrice}</span>
+              </div>
+              <p className="mt-1 text-xs leading-6 text-zinc-500">Perfect if you trade from multiple setups</p>
+              <p className="text-xs leading-6 text-emerald-200/90">Save ${deviceSavings} vs buying twice</p>
+            </div>
+          </div>
           <p className="mt-2 text-sm font-medium text-emerald-200">Instant download after purchase</p>
         </div>
       </div>

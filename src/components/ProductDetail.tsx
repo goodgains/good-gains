@@ -5,7 +5,7 @@ import { PaymentTrust } from "@/components/PaymentTrust";
 import { ProductMediaShowcase } from "@/components/ProductMediaShowcase";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
-import { bundle, BundleViewer, Product, products } from "@/lib/products";
+import { bundle, BundleViewer, getProductDeviceSavings, Product, products } from "@/lib/products";
 
 type ProductDetailProps =
   | {
@@ -85,6 +85,7 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
   const currentPrice = bundleView?.price ?? currentProduct!.price;
   const currentPriceEnv = bundleView?.stripePriceEnv ?? currentProduct!.stripePriceEnv;
   const currentId = bundleView?.id ?? currentProduct!.slug;
+  const deviceSavings = currentProduct ? getProductDeviceSavings(currentProduct) : 0;
   const whatYouGet = bundleView ? bundleWhatYouGet : whatYouGetBySlug[currentProduct!.slug] ?? currentProduct!.quickBullets;
   const includedFeatures = bundleView ? bundleFeatures : currentProduct!.features;
   const idealFor = bundleView ? bundleIdealFor : currentProduct!.idealFor;
@@ -155,15 +156,22 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
       {!bundleView && currentProduct ? (
         <div className="mt-4 grid gap-2">
           <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-200">
-            <span>1 Device</span>
+            <div>
+              <span className="font-semibold text-white">1 Device</span>
+              <p className="mt-1 text-xs leading-6 text-zinc-500">Limited to one computer</p>
+            </div>
             <span className="font-semibold text-white">${currentProduct.price}</span>
           </div>
-          <div className="flex items-center justify-between rounded-2xl border border-emerald-400/20 bg-emerald-400/5 px-4 py-3 text-sm text-zinc-100">
-            <div className="flex items-center gap-2">
-              <span>2 Devices</span>
-              <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
-                Most Popular
-              </span>
+          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-300">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-white">2 Devices</span>
+                <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
+                  Best Value
+                </span>
+              </div>
+              <p className="mt-1 text-xs leading-6 text-zinc-500">Perfect if you trade from multiple setups</p>
+              <p className="text-xs leading-6 text-emerald-200/90">Save ${deviceSavings} vs buying twice</p>
             </div>
             <span className="font-semibold text-white">${currentProduct.twoDevicePrice}</span>
           </div>

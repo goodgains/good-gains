@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { getProductBySlug, getProductDeviceSavings } from "@/lib/products";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TRUST_TEXT = "Secure checkout via PayPal - Pay with card or PayPal";
@@ -58,6 +59,8 @@ export function BuyButton({
   showCoupon = false,
   showTrustBadges = false
 }: BuyButtonProps) {
+  const matchedProduct = allowTwoDeviceOption ? getProductBySlug(productId) : undefined;
+  const deviceSavings = matchedProduct ? getProductDeviceSavings(matchedProduct) : 0;
   const [isReady, setIsReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -225,9 +228,20 @@ export function BuyButton({
               <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-400/85">License devices</p>
               <div className="grid grid-cols-2 gap-2">
                 {([
-                  { value: 1 as const, label: "1 Device" },
-                  { value: 2 as const, label: "2 Devices", badge: "Most Popular" }
+                  {
+                    value: 1 as const,
+                    label: "1 Device",
+                    note: "Limited to one computer"
+                  },
+                  {
+                    value: 2 as const,
+                    label: "2 Devices",
+                    badge: "Best Value",
+                    note: "Perfect if you trade from multiple setups",
+                    savings: deviceSavings
+                  }
                 ]).map((option) => {
+                  const isSelected = (onDeviceCountChange ? deviceCount : selectedDeviceCount) === option.value;
                   return (
                     <button
                       key={option.value}
@@ -238,17 +252,19 @@ export function BuyButton({
                         setCouponStatus(null);
                       }}
                       className={`rounded-2xl border px-3 py-3 text-left transition ${
-                        (onDeviceCountChange ? deviceCount : selectedDeviceCount) === option.value
-                          ? "border-emerald-400/40 bg-emerald-400/10 text-white"
-                          : "border-white/10 bg-black/25 text-zinc-300 hover:border-white/20 hover:text-white"
+                        isSelected
+                          ? "border-emerald-400/40 bg-emerald-400/10 text-white shadow-[0_0_24px_rgba(74,222,128,0.08)]"
+                          : option.value === 2
+                            ? "border-emerald-400/18 bg-black/25 text-zinc-300 hover:border-emerald-400/30 hover:text-white"
+                            : "border-white/10 bg-black/25 text-zinc-300 hover:border-white/20 hover:text-white"
                       }`}
                     >
                       <p className="text-sm font-semibold">{option.label}</p>
-                      {option.badge ? (
-                        <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-emerald-200/90">{option.badge}</p>
-                      ) : (
-                        <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-zinc-500">Standard</p>
-                      )}
+                      {option.badge ? <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-emerald-200/90">{option.badge}</p> : null}
+                      <p className={`mt-1 text-[11px] leading-5 ${isSelected ? "text-zinc-200" : "text-zinc-500"}`}>{option.note}</p>
+                      {option.savings ? (
+                        <p className="mt-1 text-[11px] leading-5 text-emerald-200/90">Save ${option.savings} vs buying twice</p>
+                      ) : null}
                     </button>
                   );
                 })}

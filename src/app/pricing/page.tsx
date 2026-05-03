@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PaymentTrust } from "@/components/PaymentTrust";
 import { PageHero } from "@/components/PageHero";
 import { Container } from "@/components/ui/Container";
-import { bundle, products } from "@/lib/products";
+import { bundle, getProductDeviceSavings, products } from "@/lib/products";
 
 export default function PricingPage() {
   return (
@@ -40,15 +40,22 @@ export default function PricingPage() {
                   <p className="mt-2 text-4xl font-semibold text-white">From ${product.price}</p>
                   <div className="mt-4 grid gap-2 text-sm">
                     <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/25 px-3 py-3 text-zinc-300">
-                      <span>1 Device</span>
+                      <div>
+                        <span className="font-semibold text-white">1 Device</span>
+                        <p className="mt-1 text-xs leading-6 text-zinc-500">Limited to one computer</p>
+                      </div>
                       <span className="font-semibold text-white">${product.price}</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-2xl border border-emerald-400/20 bg-emerald-400/5 px-3 py-3 text-zinc-100">
-                      <div className="flex items-center gap-2">
-                        <span>2 Devices</span>
-                        <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
-                          Most Popular
-                        </span>
+                    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/25 px-3 py-3 text-zinc-300">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-white">2 Devices</span>
+                          <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
+                            Best Value
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs leading-6 text-zinc-500">Perfect if you trade from multiple setups</p>
+                        <p className="text-xs leading-6 text-emerald-200/90">Save ${getProductDeviceSavings(product)} vs buying twice</p>
                       </div>
                       <span className="font-semibold text-white">${product.twoDevicePrice}</span>
                     </div>

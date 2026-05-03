@@ -51,6 +51,10 @@ export type DevicePricingOption = {
   badge?: string;
 };
 
+export function getProductDeviceSavings(product: Product) {
+  return Math.max(0, product.price * 2 - product.twoDevicePrice);
+}
+
 export const bundleDeviceUpgrade = {
   id: "good-gains-trading-toolkit-2-device-upgrade",
   name: "Good Gains Trading Toolkit 2-Device Upgrade",
@@ -315,7 +319,7 @@ export function getProductDeviceOptions(product: Product): DevicePricingOption[]
       deviceCount: 2,
       price: product.twoDevicePrice,
       label: "2 Devices",
-      badge: "Most Popular"
+      badge: "Best Value"
     }
   ];
 }
