@@ -63,6 +63,9 @@ type PayPalCustomIdPayload = {
   couponCode?: string;
   customerEmail?: string;
   deviceCount?: 1 | 2;
+  checkoutType?: "standard" | "bundle_device_upgrade";
+  licenseKey?: string;
+  upgradeToDevices?: 1 | 2;
 };
 
 function getPayPalApiBaseUrl() {
@@ -106,14 +109,20 @@ export function parsePayPalCustomId(customId?: string | null) {
       productName: parsed.productName,
       couponCode: parsed.couponCode || null,
       customerEmail: parsed.customerEmail?.trim().toLowerCase() || null,
-      deviceCount: parsed.deviceCount === 2 ? 2 : 1
+      deviceCount: parsed.deviceCount === 2 ? 2 : 1,
+      checkoutType: parsed.checkoutType === "bundle_device_upgrade" ? "bundle_device_upgrade" : "standard",
+      licenseKey: parsed.licenseKey?.trim().toUpperCase() || null,
+      upgradeToDevices: parsed.upgradeToDevices === 2 ? 2 : 1
     };
   } catch {
     return {
       productName: customId,
       couponCode: null,
       customerEmail: null,
-      deviceCount: 1
+      deviceCount: 1,
+      checkoutType: "standard",
+      licenseKey: null,
+      upgradeToDevices: 1
     };
   }
 }

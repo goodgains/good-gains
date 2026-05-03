@@ -154,6 +154,22 @@ export type ProductUpdateRecipient = {
   orderCreatedAt: string;
 };
 
+export type ManagedLicenseOwnership = {
+  customerId: string;
+  customerEmail: string;
+  customerName: string;
+  orderId: string;
+  downloadToken: string;
+  purchasedProductName: string;
+  purchasedSlugs: string[];
+  licenseId: string;
+  licenseKey: string;
+  maxDevices: number;
+  paymentStatus: DeliveryRecord["paymentStatus"];
+  status: "active" | "disabled" | "refunded";
+  isBundlePurchase: boolean;
+};
+
 export type SupabaseVerifiedLicense = {
   license_key: string;
   customer_email: string;
@@ -804,6 +820,56 @@ async function selectLicensesOrder(orderId: string) {
     `orders?select=*&id=eq.${encodeFilterValue(orderId)}&limit=1`
   );
   return response.data?.[0] ?? null;
+}
+
+export async function getManagedLicenseOwnership(input: {
+  email: string;
+  licenseKey: string;
+}) {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  const ownership = await selectCustomerOwnedLicense({
+    email: input.email,
+    licenseKey: input.licenseKey
+  });
+
+  if (!ownership) {
+    return null;
+  }
+
+  const [order, licenseProducts] = await Promise.all([
+    selectLicensesOrder(ownership.license.order_id),
+    selectLicenseProductsByLicenseId(ownership.license.id)
+  ]);
+
+  if (!order) {
+    return null;
+  }
+
+  const slugs =
+    licenseProducts.length > 0 ? mapLicenseRowsToProductSlugs(licenseProducts) : order.purchased_slugs;
+  const isBundlePurchase =
+    order.bundle_id === bundle.id ||
+    order.purchased_product_name.trim().toLowerCase() === bundle.name.toLowerCase() ||
+    slugs.length > 1;
+
+  return {
+    customerId: ownership.customer.id,
+    customerEmail: normalizeEmail(ownership.customer.email),
+    customerName: order.customer_name || ownership.customer.name || "Trader",
+    orderId: order.id,
+    downloadToken: order.download_token,
+    purchasedProductName: order.purchased_product_name,
+    purchasedSlugs: slugs,
+    licenseId: ownership.license.id,
+    licenseKey: ownership.license.license_key,
+    maxDevices: Math.max(1, ownership.license.max_devices ?? order.device_count ?? 1),
+    paymentStatus: ownership.license.payment_status,
+    status: ownership.license.status,
+    isBundlePurchase
+  } satisfies ManagedLicenseOwnership;
 }
 
 export async function logSupabaseDeliveryEvent(input: {

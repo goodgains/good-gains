@@ -5,7 +5,7 @@ import {
   DOWNLOAD_ACCESS_COOKIE
 } from "@/lib/delivery";
 import { incrementCouponUsage } from "@/lib/coupons";
-import { logSupabaseDeliveryEvent } from "@/lib/customer-db";
+import { getManagedLicenseOwnership, logSupabaseDeliveryEvent, upgradeLicenseDeviceLimit } from "@/lib/customer-db";
 import { sendPurchaseEmail } from "@/lib/email";
 import { siteConfig } from "@/lib/site";
 import { capturePayPalOrder, getBaseUrl, getPayPalOrder, parsePayPalCustomId } from "@/lib/paypal";
@@ -44,6 +44,9 @@ export async function GET(request: Request) {
     const couponCode = customIdPayload?.couponCode;
     const deliveryEmail = customIdPayload?.customerEmail;
     const deviceCount = customIdPayload?.deviceCount === 2 ? 2 : 1;
+    const checkoutType = customIdPayload?.checkoutType ?? "standard";
+    const upgradeLicenseKey = customIdPayload?.licenseKey ?? null;
+    const upgradeToDevices = customIdPayload?.upgradeToDevices === 2 ? 2 : 1;
     const shouldCountCoupon = Boolean(couponCode) && order.status !== "COMPLETED";
     const customerEmail =
       deliveryEmail ??
@@ -65,6 +68,45 @@ export async function GET(request: Request) {
 
     if (!productName || !customerEmail) {
       throw new Error("PayPal capture did not return product or customer email.");
+    }
+
+    if (checkoutType === "bundle_device_upgrade") {
+      if (!upgradeLicenseKey) {
+        throw new Error("Bundle upgrade checkout did not include a license key.");
+      }
+
+      const upgradedLicense = await upgradeLicenseDeviceLimit({
+        customerEmail,
+        licenseKey: upgradeLicenseKey,
+        maxDevices: upgradeToDevices
+      });
+
+      if (!upgradedLicense) {
+        throw new Error("Unable to upgrade the bundle license to 2 devices.");
+      }
+
+      const ownership = await getManagedLicenseOwnership({
+        email: customerEmail,
+        licenseKey: upgradeLicenseKey
+      });
+
+      await logSupabaseDeliveryEvent({
+        customerId: ownership?.customerId ?? null,
+        orderId: ownership?.orderId ?? null,
+        licenseId: ownership?.licenseId ?? null,
+        context: "bundle_device_upgrade",
+        to: customerEmail,
+        from: siteConfig.supportEmail,
+        replyTo: siteConfig.supportEmail,
+        provider: "paypal",
+        sent: true,
+        providerResponse: {
+          orderId: finalOrder.id,
+          upgradedToDevices: upgradeToDevices
+        }
+      });
+
+      return NextResponse.redirect(new URL("/license-activation?upgrade=success", getBaseUrl()));
     }
 
     const record = await createDeliveryRecord({

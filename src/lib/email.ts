@@ -3,6 +3,7 @@ import path from "node:path";
 import { DeliveryRecord, buildPrivateDownloadUrl, getDeliveryDownloadData } from "@/lib/delivery";
 import { getBaseUrl } from "@/lib/base-url";
 import { bundleDownload } from "@/lib/downloads";
+import { bundleDeviceUpgrade } from "@/lib/products";
 import { siteConfig } from "@/lib/site";
 
 export type LicenseRecoveryEntry = {
@@ -62,6 +63,10 @@ function buildEmailContent(record: DeliveryRecord) {
     textLines.push("Import each included ZIP into NinjaTrader 8 using Tools > Import > NinjaScript Add-On.");
     textLines.push("Use the same license key for every included Good Gains tool.");
     textLines.push("Open each tool after import and keep your license key available.");
+    textLines.push("");
+    textLines.push("Using more than one computer?");
+    textLines.push(`Upgrade your bundle license to 2 devices for $${bundleDeviceUpgrade.price} and keep the same license key.`);
+    textLines.push(`Manage the upgrade here: ${getBaseUrl()}/license-activation`);
   } else {
     releases[0]?.release.installNotes.forEach((note) => textLines.push(`- ${note}`));
   }
@@ -79,6 +84,24 @@ function buildEmailContent(record: DeliveryRecord) {
 
   const installList =
     (hasBundlePurchase ? bundleDownload.installNotes : releases[0]?.release.installNotes) ?? [];
+  const upgradeUrl = `${getBaseUrl()}/license-activation`;
+  const bundleUpgradeSection = hasBundlePurchase
+    ? `
+        <div style="margin-top:24px;border:1px solid rgba(110,231,183,0.16);border-radius:20px;background:rgba(16,185,129,0.06);padding:20px;">
+          <p style="margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.24em;color:#6ee7b7;">Bundle Upgrade</p>
+          <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;">Using more than one computer?</p>
+          <p style="margin:12px 0 0;font-size:15px;line-height:1.8;color:#d4d4d8;">
+            Upgrade your bundle license to 2 devices for $${bundleDeviceUpgrade.price} and keep the same license key.
+          </p>
+          <a href="${upgradeUrl}" style="display:inline-block;margin-top:16px;padding:12px 22px;border-radius:999px;background:#6ee7b7;color:#000000;font-weight:700;text-decoration:none;">
+            Upgrade to 2 Devices
+          </a>
+          <p style="margin:12px 0 0;font-size:13px;line-height:1.8;color:#a1a1aa;">
+            Open the License &amp; Access Center, enter your purchase email and bundle license key, and complete the upgrade payment.
+          </p>
+        </div>
+      `
+    : "";
 
   const html = `
     <div style="background:#09090b;padding:32px;font-family:Arial,sans-serif;color:#e4e4e7;">
@@ -121,6 +144,8 @@ function buildEmailContent(record: DeliveryRecord) {
             ${installList.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
           </ul>
         </div>
+
+        ${bundleUpgradeSection}
 
         <p style="margin-top:24px;font-size:15px;color:#ffffff;font-weight:600;">
           Lifetime updates + ongoing improvements

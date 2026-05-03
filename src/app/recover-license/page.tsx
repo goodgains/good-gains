@@ -1,9 +1,17 @@
 import Link from "next/link";
+import { BundleUpgradeCard } from "@/components/BundleUpgradeCard";
 import { RecoverLicenseForm } from "@/components/RecoverLicenseForm";
 import { PageHero } from "@/components/PageHero";
 import { Container } from "@/components/ui/Container";
 
-export default function RecoverLicensePage() {
+export default async function RecoverLicensePage({
+  searchParams
+}: {
+  searchParams?: Promise<{ upgrade?: string }>;
+}) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const showUpgradeSuccess = resolvedSearchParams?.upgrade === "success";
+
   return (
     <>
       <PageHero
@@ -21,6 +29,11 @@ export default function RecoverLicensePage() {
             <div className="mt-8">
               <RecoverLicenseForm />
             </div>
+            {showUpgradeSuccess ? (
+              <div className="mt-6 rounded-[1.5rem] border border-emerald-400/18 bg-emerald-400/5 px-5 py-4 text-sm font-medium text-emerald-200">
+                Your bundle license was upgraded to 2 devices. Keep using the same license key.
+              </div>
+            ) : null}
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <Link
                 href="/support"
@@ -35,6 +48,9 @@ export default function RecoverLicensePage() {
                 View Products
               </Link>
             </div>
+          </div>
+          <div className="mt-8">
+            <BundleUpgradeCard />
           </div>
         </Container>
       </section>

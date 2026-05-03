@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { bundle, bundleDeviceUpgrade } from "@/lib/products";
 import { PageHero } from "@/components/PageHero";
 import { Container } from "@/components/ui/Container";
 
@@ -8,6 +9,7 @@ export default async function SuccessPage({
   searchParams: Promise<{ product?: string; demo?: string }>;
 }) {
   const { product, demo } = await searchParams;
+  const isBundlePurchase = product?.trim().toLowerCase() === bundle.name.toLowerCase();
 
   return (
     <>
@@ -25,6 +27,20 @@ export default async function SuccessPage({
                 ? "You are seeing the local demo confirmation because live PayPal credentials are still pending."
                 : "Customers should automatically move into the private download flow and receive an email with their license key and download link."}
             </p>
+            {isBundlePurchase ? (
+              <div className="mt-6 rounded-[1.75rem] border border-emerald-400/18 bg-emerald-400/5 p-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300">Bundle Upgrade</p>
+                <h3 className="mt-2 text-2xl font-semibold text-white">Using more than one computer?</h3>
+                <p className="mt-3 text-base leading-8 text-zinc-300">
+                  Upgrade your bundle license to 2 devices for ${bundleDeviceUpgrade.price}.
+                </p>
+                <div className="mt-5">
+                  <Link href="/license-activation" className="inline-flex rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-black">
+                    Upgrade to 2 Devices
+                  </Link>
+                </div>
+              </div>
+            ) : null}
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <Link href="/license-activation" className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-black">
                 View License Info

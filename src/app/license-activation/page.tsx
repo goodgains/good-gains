@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BundleUpgradeCard } from "@/components/BundleUpgradeCard";
 import { PageHero } from "@/components/PageHero";
 import { RecoverLicenseForm } from "@/components/RecoverLicenseForm";
 import { Container } from "@/components/ui/Container";
@@ -9,7 +10,14 @@ const howItWorks = [
   "Lifetime updates"
 ];
 
-export default function LicenseActivationPage() {
+export default async function LicenseActivationPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ upgrade?: string }>;
+}) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const showUpgradeSuccess = resolvedSearchParams?.upgrade === "success";
+
   return (
     <>
       <PageHero
@@ -36,9 +44,16 @@ export default function LicenseActivationPage() {
               </div>
               <div className="rounded-[1.75rem] border border-white/10 bg-black/35 p-5 md:p-6">
                 <RecoverLicenseForm />
+                {showUpgradeSuccess ? (
+                  <div className="mt-5 rounded-[1.5rem] border border-emerald-400/18 bg-emerald-400/5 px-5 py-4 text-sm font-medium text-emerald-200">
+                    Your bundle license was upgraded to 2 devices. Keep using the same license key.
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
+
+          <BundleUpgradeCard />
 
           <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
             <article className="rounded-[2rem] border border-white/10 bg-zinc-950/75 p-6 md:p-7">
