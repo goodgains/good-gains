@@ -222,7 +222,7 @@ export const products: Product[] = [
       "Read momentum pressure and timing shifts with a cleaner SMI workflow built for intraday futures charts and confirmation-based execution.",
     benefitLine: "Time your entries with clean momentum signals.",
     price: 119,
-    twoDevicePrice: 209,
+    twoDevicePrice: 199,
     category: "Momentum Indicators",
     stripePriceEnv: "STRIPE_PRICE_GG_SMI",
     features: [
