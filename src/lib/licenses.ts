@@ -1,7 +1,10 @@
 import crypto from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { verifySupabaseLicense } from "@/lib/customer-db";
+import {
+  type SupabaseVerifiedLicense,
+  verifySupabaseLicenseWithDeviceLock
+} from "@/lib/customer-db";
 import type { DeliveryRecord } from "@/lib/delivery";
 import { bundle, getProductBySlug, products } from "@/lib/products";
 
@@ -14,6 +17,17 @@ export type LicenseRecord = {
   created_at: string;
   status: "active";
 };
+
+export type ProductLicenseVerificationResult =
+  | {
+      valid: true;
+      message: string;
+      license: SupabaseVerifiedLicense | LicenseRecord;
+    }
+  | {
+      valid: false;
+      message: string;
+    };
 
 type StatelessLicensePayload = {
   v: 2;
@@ -353,22 +367,43 @@ export async function readLicenseRecords() {
   return readFileBackedLicenseRecords();
 }
 
-export async function verifyProductLicense(input: { licenseKey?: string; product?: string }) {
+export async function verifyProductLicenseDetailed(input: {
+  licenseKey?: string;
+  product?: string;
+  machineId?: string;
+}) {
   const normalizedKey = input.licenseKey?.trim().toUpperCase() ?? "";
   const normalizedProduct = normalizeValue(input.product);
 
-  if (!normalizedKey || !normalizedProduct) {
-    return null;
+  if (!normalizedKey) {
+    return {
+      valid: false,
+      message: "Enter License Key"
+    } satisfies ProductLicenseVerificationResult;
+  }
+
+  if (!normalizedProduct) {
+    return {
+      valid: false,
+      message: "Invalid License"
+    } satisfies ProductLicenseVerificationResult;
   }
 
   try {
-    const supabaseMatch = await verifySupabaseLicense({
+    const supabaseResult = await verifySupabaseLicenseWithDeviceLock({
       licenseKey: normalizedKey,
-      product: normalizedProduct
+      product: normalizedProduct,
+      machineId: input.machineId
     });
 
-    if (supabaseMatch !== undefined) {
-      return supabaseMatch;
+    if (supabaseResult !== undefined) {
+      return supabaseResult.valid
+        ? {
+            valid: true,
+            message: supabaseResult.message,
+            license: supabaseResult.license
+          }
+        : supabaseResult;
     }
   } catch (error) {
     console.error("Supabase license verification failed", {
@@ -382,45 +417,77 @@ export async function verifyProductLicense(input: { licenseKey?: string; product
 
   if (shortLicense && matchesRequestedProduct(shortLicense.slugs, normalizedProduct)) {
     return {
-      license_key: normalizedKey,
-      customer_email: "",
-      product_id: shortLicense.slugs.length === 1 ? shortLicense.slugs[0] : null,
-      bundle_id: shortLicense.slugs.length > 1 ? BUNDLE_ID : null,
-      payment_status: "COMPLETED" as const,
-      created_at: new Date(0).toISOString(),
-      status: "active" as const
-    };
+      valid: true,
+      message: "License verified successfully.",
+      license: {
+        license_key: normalizedKey,
+        customer_email: "",
+        product_id: shortLicense.slugs.length === 1 ? shortLicense.slugs[0] : null,
+        bundle_id: shortLicense.slugs.length > 1 ? BUNDLE_ID : null,
+        payment_status: "COMPLETED" as const,
+        created_at: new Date(0).toISOString(),
+        status: "active" as const
+      }
+    } satisfies ProductLicenseVerificationResult;
   }
 
   const statelessPayload = parseStatelessLicenseKey(normalizedKey);
 
   if (statelessPayload && matchesRequestedProduct(statelessPayload.slugs, normalizedProduct)) {
     return {
-      license_key: normalizedKey,
-      customer_email: statelessPayload.email,
-      product_id: statelessPayload.slugs.length === 1 ? statelessPayload.slugs[0] : null,
-      bundle_id: statelessPayload.slugs.length > 1 ? BUNDLE_ID : null,
-      payment_status: "COMPLETED" as const,
-      created_at: statelessPayload.createdAt,
-      status: "active" as const
-    };
+      valid: true,
+      message: "License verified successfully.",
+      license: {
+        license_key: normalizedKey,
+        customer_email: statelessPayload.email,
+        product_id: statelessPayload.slugs.length === 1 ? statelessPayload.slugs[0] : null,
+        bundle_id: statelessPayload.slugs.length > 1 ? BUNDLE_ID : null,
+        payment_status: "COMPLETED" as const,
+        created_at: statelessPayload.createdAt,
+        status: "active" as const
+      }
+    } satisfies ProductLicenseVerificationResult;
   }
 
   const records = await readFileBackedLicenseRecords();
+  const record = records.find((entry) => {
+    if (entry.license_key.trim().toUpperCase() !== normalizedKey) {
+      return false;
+    }
 
-  return (
-    records.find((record) => {
-      if (record.license_key.trim().toUpperCase() !== normalizedKey) {
-        return false;
-      }
+    if (entry.status !== "active" || entry.payment_status !== "COMPLETED") {
+      return false;
+    }
 
-      if (record.status !== "active" || record.payment_status !== "COMPLETED") {
-        return false;
-      }
+    return matchesProduct(entry, normalizedProduct);
+  });
 
-      return matchesProduct(record, normalizedProduct);
-    }) ?? null
-  );
+  if (!record) {
+    return {
+      valid: false,
+      message: "Invalid License"
+    } satisfies ProductLicenseVerificationResult;
+  }
+
+  return {
+    valid: true,
+    message: "License verified successfully.",
+    license: record
+  } satisfies ProductLicenseVerificationResult;
+}
+
+export async function verifyProductLicense(input: {
+  licenseKey?: string;
+  product?: string;
+  machineId?: string;
+}) {
+  const result = await verifyProductLicenseDetailed(input);
+
+  if (!result.valid) {
+    return null;
+  }
+
+  return result.license;
 }
 
 export async function syncLicenseRecord(record: DeliveryRecord) {

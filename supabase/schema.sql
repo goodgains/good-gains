@@ -111,3 +111,46 @@ create table if not exists public.product_update_email_logs (
 
 create index if not exists product_update_email_logs_update_id_idx on public.product_update_email_logs (product_update_id);
 create index if not exists product_update_email_logs_customer_email_idx on public.product_update_email_logs (customer_email);
+
+alter table public.orders
+  add column if not exists device_count integer not null default 1;
+
+alter table public.licenses
+  add column if not exists max_devices integer not null default 1,
+  add column if not exists machine_ids jsonb not null default '[]'::jsonb,
+  add column if not exists reset_count integer not null default 0,
+  add column if not exists max_resets integer not null default 1,
+  add column if not exists last_reset_at timestamptz null,
+  add column if not exists activated_at timestamptz null;
+
+create table if not exists public.license_reset_tokens (
+  id uuid primary key default gen_random_uuid(),
+  license_id uuid not null references public.licenses(id) on delete cascade,
+  customer_email text not null,
+  license_key text not null,
+  verification_code_hash text not null,
+  request_ip text null,
+  expires_at timestamptz not null,
+  consumed_at timestamptz null,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists license_reset_tokens_license_id_idx on public.license_reset_tokens (license_id);
+create index if not exists license_reset_tokens_customer_email_idx on public.license_reset_tokens (customer_email);
+create index if not exists license_reset_tokens_license_key_idx on public.license_reset_tokens (license_key);
+
+create table if not exists public.license_reset_logs (
+  id uuid primary key default gen_random_uuid(),
+  license_id uuid null references public.licenses(id) on delete set null,
+  customer_email text not null,
+  license_key text null,
+  request_ip text null,
+  action text not null,
+  status text not null,
+  error text null,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists license_reset_logs_license_id_idx on public.license_reset_logs (license_id);
+create index if not exists license_reset_logs_customer_email_idx on public.license_reset_logs (customer_email);
+create index if not exists license_reset_logs_request_ip_idx on public.license_reset_logs (request_ip);

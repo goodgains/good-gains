@@ -31,6 +31,9 @@ type BuyButtonProps = {
   productName: string;
   productId: string;
   priceIdEnv: string;
+  deviceCount?: 1 | 2;
+  onDeviceCountChange?: (deviceCount: 1 | 2) => void;
+  allowTwoDeviceOption?: boolean;
   label?: string;
   helperText?: string;
   className?: string;
@@ -44,6 +47,9 @@ export function BuyButton({
   productName,
   productId,
   priceIdEnv,
+  deviceCount = 1,
+  onDeviceCountChange,
+  allowTwoDeviceOption = false,
   label = "Get Instant Access",
   helperText = "Get instant access now",
   className = "",
@@ -66,6 +72,12 @@ export function BuyButton({
   const [couponLoading, setCouponLoading] = useState(false);
   const [customerEmail, setCustomerEmail] = useState("");
   const [couponOpen, setCouponOpen] = useState(false);
+  const [selectedDeviceCount, setSelectedDeviceCount] = useState<1 | 2>(deviceCount);
+  const effectiveDeviceCount = allowTwoDeviceOption
+    ? onDeviceCountChange
+      ? deviceCount
+      : selectedDeviceCount
+    : 1;
 
   useEffect(() => {
     const id = window.setTimeout(() => {
@@ -75,6 +87,10 @@ export function BuyButton({
     return () => window.clearTimeout(id);
   }, []);
 
+  useEffect(() => {
+    setSelectedDeviceCount(deviceCount);
+  }, [deviceCount]);
+
   async function applyCoupon() {
     setCouponLoading(true);
     setError("");
@@ -83,7 +99,7 @@ export function BuyButton({
       const response = await fetch("/api/coupon/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: couponCode, productId })
+        body: JSON.stringify({ code: couponCode, productId, deviceCount: effectiveDeviceCount })
       });
 
       const data = (await response.json()) as {
@@ -134,7 +150,8 @@ export function BuyButton({
           productId,
           priceIdEnv,
           couponCode: couponStatus?.valid ? couponCode : "",
-          customerEmail: normalizedCustomerEmail
+          customerEmail: normalizedCustomerEmail,
+          deviceCount: effectiveDeviceCount
         })
       });
 
@@ -203,6 +220,41 @@ export function BuyButton({
       ) : null}
       {showCoupon ? (
         <>
+          {allowTwoDeviceOption ? (
+            <div className="mx-auto w-full max-w-sm space-y-2 rounded-[1.25rem] border border-white/6 bg-black/20 px-3 py-3 text-left">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-400/85">License devices</p>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { value: 1 as const, label: "1 Device" },
+                  { value: 2 as const, label: "2 Devices", badge: "Most Popular" }
+                ]).map((option) => {
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDeviceCount(option.value);
+                        onDeviceCountChange?.(option.value);
+                        setCouponStatus(null);
+                      }}
+                      className={`rounded-2xl border px-3 py-3 text-left transition ${
+                        (onDeviceCountChange ? deviceCount : selectedDeviceCount) === option.value
+                          ? "border-emerald-400/40 bg-emerald-400/10 text-white"
+                          : "border-white/10 bg-black/25 text-zinc-300 hover:border-white/20 hover:text-white"
+                      }`}
+                    >
+                      <p className="text-sm font-semibold">{option.label}</p>
+                      {option.badge ? (
+                        <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-emerald-200/90">{option.badge}</p>
+                      ) : (
+                        <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-zinc-500">Standard</p>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
           <div className="mx-auto w-full max-w-sm space-y-2 rounded-[1.25rem] border border-white/6 bg-black/20 px-3 py-3 text-left">
             <label className="text-[11px] font-medium text-zinc-400/85" htmlFor={`${productId}-delivery-email`}>
               Email for delivery

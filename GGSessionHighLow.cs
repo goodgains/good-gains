@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.IO;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Windows;
 using System.Windows.Media;
@@ -44,6 +45,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         private bool lastValidatedUseLocalLicenseServer;
         private string licenseStatusMessage;
         private string lastValidatedLicenseKey;
+        private string lastValidatedMachineId;
 
         private class SessionState
         {
@@ -116,6 +118,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 licenseIsValid = false;
                 licenseStatusMessage = string.Empty;
                 lastValidatedLicenseKey = string.Empty;
+                lastValidatedMachineId = string.Empty;
                 lastValidatedUseLocalLicenseServer = UseLocalLicenseServer;
             }
             else if (State == State.DataLoaded)
@@ -212,6 +215,69 @@ namespace NinjaTrader.NinjaScript.Indicators
                 .Replace("\n", "\\n");
         }
 
+        private string GetMachineId()
+        {
+            try
+            {
+                string rawMachineIdentity = string.Join("|",
+                    Environment.MachineName ?? string.Empty,
+                    Environment.UserDomainName ?? string.Empty,
+                    Environment.ProcessorCount.ToString(CultureInfo.InvariantCulture),
+                    Environment.Is64BitOperatingSystem ? "x64" : "x86");
+
+                using (SHA256 sha = SHA256.Create())
+                {
+                    byte[] hashBytes = sha.ComputeHash(Encoding.UTF8.GetBytes(rawMachineIdentity));
+                    StringBuilder builder = new StringBuilder(hashBytes.Length * 2);
+
+                    foreach (byte hashByte in hashBytes)
+                        builder.Append(hashByte.ToString("x2", CultureInfo.InvariantCulture));
+
+                    return builder.ToString();
+                }
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private string ExtractResponseMessage(string responseText)
+        {
+            if (string.IsNullOrWhiteSpace(responseText))
+                return string.Empty;
+
+            const string propertyName = "\"message\"";
+            int propertyIndex = responseText.IndexOf(propertyName, StringComparison.OrdinalIgnoreCase);
+            if (propertyIndex < 0)
+                return string.Empty;
+
+            int colonIndex = responseText.IndexOf(':', propertyIndex + propertyName.Length);
+            if (colonIndex < 0)
+                return string.Empty;
+
+            int valueStartIndex = responseText.IndexOf('"', colonIndex + 1);
+            if (valueStartIndex < 0)
+                return string.Empty;
+
+            int valueEndIndex = valueStartIndex + 1;
+            while (valueEndIndex < responseText.Length)
+            {
+                if (responseText[valueEndIndex] == '"' && responseText[valueEndIndex - 1] != '\\')
+                    break;
+
+                valueEndIndex++;
+            }
+
+            if (valueEndIndex >= responseText.Length)
+                return string.Empty;
+
+            return responseText
+                .Substring(valueStartIndex + 1, valueEndIndex - valueStartIndex - 1)
+                .Replace("\\\"", "\"")
+                .Replace("\\\\", "\\");
+        }
+
         private void SetLicenseState(bool isValid, string message)
         {
             licenseValidated = true;
@@ -226,13 +292,16 @@ namespace NinjaTrader.NinjaScript.Indicators
         private void ValidateLicenseStatus()
         {
             string normalizedLicenseKey = NormalizeLicenseKey(LicenseKey);
+            string machineId = GetMachineId();
 
             if (licenseValidated &&
                 string.Equals(lastValidatedLicenseKey, normalizedLicenseKey, StringComparison.Ordinal) &&
+                string.Equals(lastValidatedMachineId, machineId, StringComparison.Ordinal) &&
                 lastValidatedUseLocalLicenseServer == UseLocalLicenseServer)
                 return;
 
             lastValidatedLicenseKey = normalizedLicenseKey;
+            lastValidatedMachineId = machineId;
             lastValidatedUseLocalLicenseServer = UseLocalLicenseServer;
 
             if (string.IsNullOrWhiteSpace(normalizedLicenseKey))
@@ -251,7 +320,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 
             try
             {
-                string payload = "{\"licenseKey\":\"" + EscapeJsonValue(normalizedLicenseKey) + "\",\"product\":\"" + EscapeJsonValue(ProductDisplayName) + "\"}";
+                string payload = "{\"licenseKey\":\"" + EscapeJsonValue(normalizedLicenseKey) + "\",\"license_key\":\"" + EscapeJsonValue(normalizedLicenseKey) + "\",\"product\":\"" + EscapeJsonValue(ProductDisplayName) + "\",\"product_name\":\"" + EscapeJsonValue(ProductDisplayName) + "\",\"machineId\":\"" + EscapeJsonValue(machineId) + "\",\"machine_id\":\"" + EscapeJsonValue(machineId) + "\"}";
                 byte[] payloadBytes = Encoding.UTF8.GetBytes(payload);
 
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(GetLicenseServerUrl());
@@ -274,10 +343,13 @@ namespace NinjaTrader.NinjaScript.Indicators
                     bool isValid =
                         responseText.IndexOf("\"valid\":true", StringComparison.OrdinalIgnoreCase) >= 0 ||
                         responseText.IndexOf("\"valid\": true", StringComparison.OrdinalIgnoreCase) >= 0;
+                    string responseMessage = ExtractResponseMessage(responseText);
 
                     SetLicenseState(
                         isValid,
-                        isValid ? string.Empty : InvalidLicenseMessage);
+                        isValid
+                            ? string.Empty
+                            : (string.IsNullOrWhiteSpace(responseMessage) ? InvalidLicenseMessage : responseMessage));
                 }
             }
             catch (Exception ex)

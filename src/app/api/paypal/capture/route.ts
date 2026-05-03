@@ -43,6 +43,7 @@ export async function GET(request: Request) {
     const productName = customIdPayload?.productName;
     const couponCode = customIdPayload?.couponCode;
     const deliveryEmail = customIdPayload?.customerEmail;
+    const deviceCount = customIdPayload?.deviceCount === 2 ? 2 : 1;
     const shouldCountCoupon = Boolean(couponCode) && order.status !== "COMPLETED";
     const customerEmail =
       deliveryEmail ??
@@ -73,6 +74,7 @@ export async function GET(request: Request) {
       customerEmail,
       customerName,
       productName,
+      maxDevices: deviceCount,
       couponCode: couponCode ?? null,
       amountUsd: Number.isFinite(amountUsd) ? amountUsd : null,
       createdAt:

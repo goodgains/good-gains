@@ -37,8 +37,23 @@ export default function PricingPage() {
                 <p className="mt-3 text-base font-semibold leading-7 text-white">{product.benefitLine}</p>
                 <div className="mt-auto pt-10">
                   <p className="text-sm uppercase tracking-[0.2em] text-zinc-500">Price</p>
-                  <p className="mt-2 text-4xl font-semibold text-white">${product.price}</p>
-                  <p className="mt-2 text-sm font-medium text-emerald-200">Instant download after purchase</p>
+                  <p className="mt-2 text-4xl font-semibold text-white">From ${product.price}</p>
+                  <div className="mt-4 grid gap-2 text-sm">
+                    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/25 px-3 py-3 text-zinc-300">
+                      <span>1 Device</span>
+                      <span className="font-semibold text-white">${product.price}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-2xl border border-emerald-400/20 bg-emerald-400/5 px-3 py-3 text-zinc-100">
+                      <div className="flex items-center gap-2">
+                        <span>2 Devices</span>
+                        <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
+                          Most Popular
+                        </span>
+                      </div>
+                      <span className="font-semibold text-white">${product.twoDevicePrice}</span>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm font-medium text-emerald-200">Instant download after purchase</p>
                 </div>
                 <div className="mt-6">
                   <Link

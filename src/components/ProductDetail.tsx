@@ -151,7 +151,29 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
     <div className="rounded-[2rem] border border-white/10 bg-zinc-950/85 p-6">
       <p className="text-sm uppercase tracking-[0.22em] text-zinc-500">{bundleView ? "Complete trading system" : "Single product license"}</p>
       {bundleView ? <p className="mt-3 text-sm font-medium text-emerald-200">Total value: $646</p> : null}
-      <p className="mt-3 text-5xl font-semibold text-white">${currentPrice}</p>
+      <p className="mt-3 text-5xl font-semibold text-white">{bundleView ? `$${currentPrice}` : `From $${currentPrice}`}</p>
+      {!bundleView && currentProduct ? (
+        <div className="mt-4 grid gap-2">
+          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-200">
+            <span>1 Device</span>
+            <span className="font-semibold text-white">${currentProduct.price}</span>
+          </div>
+          <div className="flex items-center justify-between rounded-2xl border border-emerald-400/20 bg-emerald-400/5 px-4 py-3 text-sm text-zinc-100">
+            <div className="flex items-center gap-2">
+              <span>2 Devices</span>
+              <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
+                Most Popular
+              </span>
+            </div>
+            <span className="font-semibold text-white">${currentProduct.twoDevicePrice}</span>
+          </div>
+          {!bundleView ? (
+            <p className="text-xs leading-6 text-zinc-400">
+              Choose 1 or 2 devices below. Bundle checkout remains 1 device and can be upgraded later.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       <p className="mt-4 text-sm leading-7 text-zinc-300">{purchaseDescription}</p>
       {bundleView ? (
         <div className="mt-4 rounded-2xl border border-emerald-400/15 bg-emerald-400/5 px-4 py-4 text-sm text-zinc-200">
@@ -168,7 +190,15 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
         <p className="mt-4 text-center text-sm font-medium text-emerald-100/80">Used daily by traders to prevent overtrading and protect profits</p>
       ) : null}
       <div className="relative z-20 mt-6 pointer-events-auto">
-        <BuyButton productName={currentName} productId={currentId} priceIdEnv={currentPriceEnv} label={purchaseLabel} helperText={purchaseHelperText} showCoupon />
+        <BuyButton
+          productName={currentName}
+          productId={currentId}
+          priceIdEnv={currentPriceEnv}
+          allowTwoDeviceOption={!bundleView}
+          label={purchaseLabel}
+          helperText={purchaseHelperText}
+          showCoupon
+        />
         {bundleView ? <p className="mt-4 text-center text-sm font-medium text-emerald-100/80">Used daily by active futures traders</p> : null}
         {isDailyAccountLock ? (
           <p className="mt-4 text-center text-sm font-medium text-zinc-200">Instant protection. No second chances.</p>

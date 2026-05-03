@@ -37,7 +37,8 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="mb-4 mt-auto pt-6">
         <div>
           <p className="text-sm uppercase tracking-[0.2em] text-zinc-500">Price</p>
-          <p className="text-3xl font-semibold text-white">${product.price}</p>
+          <p className="text-3xl font-semibold text-white">From ${product.price}</p>
+          <p className="mt-2 text-sm text-zinc-400">2-device license available for ${product.twoDevicePrice}</p>
           <p className="mt-2 text-sm font-medium text-emerald-200">Instant download after purchase</p>
         </div>
       </div>

@@ -1,29 +1,37 @@
-﻿import { NextResponse } from "next/server";
-import { verifyProductLicense } from "@/lib/licenses";
+import { NextResponse } from "next/server";
+import { verifyProductLicenseDetailed } from "@/lib/licenses";
 
 type VerifyLicenseBody = {
   licenseKey?: string;
+  license_key?: string;
   product?: string;
+  product_name?: string;
   machineId?: string;
+  machine_id?: string;
 };
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as VerifyLicenseBody;
-  const match = await verifyProductLicense({
-    licenseKey: body.licenseKey,
-    product: body.product
+  const licenseKey = body.licenseKey ?? body.license_key;
+  const product = body.product ?? body.product_name;
+  const machineId = body.machineId ?? body.machine_id;
+  const result = await verifyProductLicenseDetailed({
+    licenseKey,
+    product,
+    machineId
   });
 
-  if (match) {
+  if (result.valid) {
     return NextResponse.json({
       ready: true,
       valid: true,
-      message: "License verified successfully.",
+      message: result.message,
       license: {
-        status: match.status,
-        product: body.product ?? "",
-        licenseKey: match.license_key,
-        issuedAt: match.created_at
+        status: result.license.status,
+        product: product ?? "",
+        licenseKey: result.license.license_key,
+        issuedAt: result.license.created_at,
+        maxDevices: "max_devices" in result.license ? result.license.max_devices : 1
       }
     });
   }
@@ -31,12 +39,12 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ready: true,
     valid: false,
-    message: "Invalid license key",
+    message: result.message,
     received: {
-      licenseKey: body.licenseKey ?? "",
-      product: body.product ?? "",
-      machineId: body.machineId ?? ""
+      licenseKey: licenseKey ?? "",
+      product: product ?? "",
+      machineId: machineId ?? ""
     },
-    expectedFields: ["license key", "product"]
+    expectedFields: ["license key", "product", "machineId"]
   });
 }

@@ -5,6 +5,7 @@
   description: string;
   benefitLine: string;
   price: number;
+  twoDevicePrice: number;
   category: string;
   stripePriceEnv: string;
   badge?: string;
@@ -43,6 +44,19 @@ export type BundleViewer = {
   highlights: string[];
 };
 
+export type DevicePricingOption = {
+  deviceCount: 1 | 2;
+  price: number;
+  label: string;
+  badge?: string;
+};
+
+export const bundleDeviceUpgrade = {
+  id: "good-gains-trading-toolkit-2-device-upgrade",
+  name: "Good Gains Trading Toolkit 2-Device Upgrade",
+  price: 149
+} as const;
+
 export const products: Product[] = [
   {
     slug: "gg-rr-trade-panel",
@@ -52,6 +66,7 @@ export const products: Product[] = [
       "Plan, manage, and adjust trades directly from the chart with a precision-focused risk-reward panel made for active futures execution.",
     benefitLine: "Control your risk visually and execute trades faster.",
     price: 299,
+    twoDevicePrice: 529,
     category: "Trade Management",
     stripePriceEnv: "STRIPE_PRICE_GG_RR_TRADE_PANEL",
     badge: "Most Popular",
@@ -104,6 +119,7 @@ export const products: Product[] = [
       "Stop revenge trading, block new entries, and protect your day with a lockout tool built for futures discipline.",
     benefitLine: "Lock your session before emotions take over.",
     price: 149,
+    twoDevicePrice: 249,
     category: "Risk Control",
     stripePriceEnv: "STRIPE_PRICE_DAILY_ACCOUNT_LOCK",
     features: [
@@ -153,6 +169,7 @@ export const products: Product[] = [
       "Map the major global session ranges cleanly so you can frame liquidity, reactions, and structure without cluttering the chart.",
     benefitLine: "See key levels before the market moves.",
     price: 79,
+    twoDevicePrice: 139,
     category: "Session Tools",
     stripePriceEnv: "STRIPE_PRICE_SESSION_HIGH_LOW",
     features: [
@@ -201,6 +218,7 @@ export const products: Product[] = [
       "Read momentum pressure and timing shifts with a cleaner SMI workflow built for intraday futures charts and confirmation-based execution.",
     benefitLine: "Time your entries with clean momentum signals.",
     price: 119,
+    twoDevicePrice: 209,
     category: "Momentum Indicators",
     stripePriceEnv: "STRIPE_PRICE_GG_SMI",
     features: [
@@ -273,5 +291,36 @@ export function getProductBySlug(slug: string) {
 
 export function isBundleSlug(slug: string) {
   return slug === bundle.slug || slug === bundle.id;
+}
+
+export function getProductPrice(
+  product: Product | BundleViewer,
+  deviceCount: 1 | 2 = 1
+) {
+  if ("twoDevicePrice" in product) {
+    return deviceCount === 2 ? product.twoDevicePrice : product.price;
+  }
+
+  return product.price;
+}
+
+export function getProductDeviceOptions(product: Product): DevicePricingOption[] {
+  return [
+    {
+      deviceCount: 1,
+      price: product.price,
+      label: "1 Device"
+    },
+    {
+      deviceCount: 2,
+      price: product.twoDevicePrice,
+      label: "2 Devices",
+      badge: "Most Popular"
+    }
+  ];
+}
+
+export function normalizeDeviceCount(value?: number | string | null): 1 | 2 {
+  return Number(value) === 2 ? 2 : 1;
 }
 

@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
-import { bundle, products } from "@/lib/products";
+import { bundle, getProductPrice, normalizeDeviceCount, products } from "@/lib/products";
 import { validateCouponForProduct } from "@/lib/coupons";
 
 type ValidateCouponBody = {
   code?: string;
   productId?: string;
+  deviceCount?: number;
 };
 
 export async function POST(request: Request) {
   const body = (await request.json()) as ValidateCouponBody;
   const productId = body.productId?.trim();
+  const deviceCount = normalizeDeviceCount(body.deviceCount);
 
   if (!productId) {
     return NextResponse.json(
@@ -20,12 +22,7 @@ export async function POST(request: Request) {
 
   const matchedProduct =
     products.find((product) => product.slug === productId) ??
-    (productId === bundle.id
-      ? {
-          slug: bundle.id,
-          price: bundle.price
-        }
-      : null);
+    (productId === bundle.id ? bundle : null);
 
   if (!matchedProduct) {
     return NextResponse.json(
@@ -37,7 +34,7 @@ export async function POST(request: Request) {
   const result = await validateCouponForProduct({
     code: body.code,
     productId,
-    price: matchedProduct.price
+    price: getProductPrice(matchedProduct, productId === bundle.id ? 1 : deviceCount)
   });
 
   return NextResponse.json({

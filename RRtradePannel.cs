@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -51,6 +52,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         private const string ProductionLicenseServerUrl = "https://goodgainsindicators.com/api/verify-license";
         private const string EmptyLicenseMessage = "Enter License Key";
         private const string InvalidLicenseMessage = "Invalid License";
+        private const string ActiveLicenseMessage = "License active";
         private const int LicenseRequestTimeoutMs = 5000;
         private static readonly object HostUiOwnerSync = new object();
         private static readonly Dictionary<Window, WeakReference<RRtradePannel>> HostUiOwners = new Dictionary<Window, WeakReference<RRtradePannel>>();
@@ -93,10 +95,12 @@ namespace NinjaTrader.NinjaScript.Indicators
         private Window hostWindow;
         private Canvas plannerOverlay;
         private Border panel;
+        private Border licenseBorder;
         private StackPanel panelBody;
 
         private TextBlock titleText;
         private TextBlock infoText;
+        private TextBlock licenseStatusText;
         private TextBlock pnlLiveText;
         private TextBlock rrPanelText;
         private TextBlock tpPointsValueText;
@@ -107,10 +111,13 @@ namespace NinjaTrader.NinjaScript.Indicators
         private Border pnlLiveBorder;
         private CheckBox limitCheck;
         private ComboBox accountComboBox;
+        private TextBox licenseKeyTextBox;
         private TextBlock quantityValueText;
 
         private Button longButton;
         private Button shortButton;
+        private Button applyLicenseButton;
+        private Button changeLicenseButton;
         private Button closeButton;
         private Button clearPanelButton;
         private Button sendButton;
@@ -149,6 +156,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         private bool panelCollapsed;
         private bool pnlCollapsed;
         private bool pendingManualExitSync;
+        private bool showLicenseEditor;
         private PendingCloseRequest pendingCloseRequest;
         private DateTime nextUiInstallAttempt;
         private DateTime suppressLiveSnapshotUntil;
@@ -181,6 +189,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         private bool lastValidatedUseLocalLicenseServer;
         private string licenseStatusMessage;
         private string lastValidatedLicenseKey;
+        private string lastValidatedMachineId;
 
         [NinjaScriptProperty]
         [Display(Name = "Panel Left", Order = 1, GroupName = "Layout")]
@@ -232,6 +241,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 licenseIsValid = false;
                 licenseStatusMessage = string.Empty;
                 lastValidatedLicenseKey = string.Empty;
+                lastValidatedMachineId = string.Empty;
                 lastValidatedUseLocalLicenseServer = UseLocalLicenseServer;
             }
             else if (State == State.DataLoaded)
@@ -326,12 +336,75 @@ namespace NinjaTrader.NinjaScript.Indicators
                 .Replace("\n", "\\n");
         }
 
+        private string GetMachineId()
+        {
+            try
+            {
+                string rawMachineIdentity = string.Join("|",
+                    Environment.MachineName ?? string.Empty,
+                    Environment.UserDomainName ?? string.Empty,
+                    Environment.ProcessorCount.ToString(CultureInfo.InvariantCulture),
+                    Environment.Is64BitOperatingSystem ? "x64" : "x86");
+
+                using (SHA256 sha = SHA256.Create())
+                {
+                    byte[] hashBytes = sha.ComputeHash(Encoding.UTF8.GetBytes(rawMachineIdentity));
+                    StringBuilder builder = new StringBuilder(hashBytes.Length * 2);
+
+                    foreach (byte hashByte in hashBytes)
+                        builder.Append(hashByte.ToString("x2", CultureInfo.InvariantCulture));
+
+                    return builder.ToString();
+                }
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private string ExtractResponseMessage(string responseText)
+        {
+            if (string.IsNullOrWhiteSpace(responseText))
+                return string.Empty;
+
+            const string propertyName = "\"message\"";
+            int propertyIndex = responseText.IndexOf(propertyName, StringComparison.OrdinalIgnoreCase);
+            if (propertyIndex < 0)
+                return string.Empty;
+
+            int colonIndex = responseText.IndexOf(':', propertyIndex + propertyName.Length);
+            if (colonIndex < 0)
+                return string.Empty;
+
+            int valueStartIndex = responseText.IndexOf('"', colonIndex + 1);
+            if (valueStartIndex < 0)
+                return string.Empty;
+
+            int valueEndIndex = valueStartIndex + 1;
+            while (valueEndIndex < responseText.Length)
+            {
+                if (responseText[valueEndIndex] == '"' && responseText[valueEndIndex - 1] != '\\')
+                    break;
+
+                valueEndIndex++;
+            }
+
+            if (valueEndIndex >= responseText.Length)
+                return string.Empty;
+
+            return responseText
+                .Substring(valueStartIndex + 1, valueEndIndex - valueStartIndex - 1)
+                .Replace("\\\"", "\"")
+                .Replace("\\\\", "\\");
+        }
+
         private void SetLicenseState(bool isValid, string message)
         {
             licenseValidated = true;
             licenseIsValid = isValid;
             licenseStatusMessage = isValid
-                ? string.Empty
+                ? ActiveLicenseMessage
                 : (string.IsNullOrWhiteSpace(message)
                     ? InvalidLicenseMessage
                     : message);
@@ -342,13 +415,16 @@ namespace NinjaTrader.NinjaScript.Indicators
         private void ValidateLicenseStatus()
         {
             string normalizedLicenseKey = NormalizeLicenseKey(LicenseKey);
+            string machineId = GetMachineId();
 
             if (licenseValidated &&
                 string.Equals(lastValidatedLicenseKey, normalizedLicenseKey, StringComparison.Ordinal) &&
+                string.Equals(lastValidatedMachineId, machineId, StringComparison.Ordinal) &&
                 lastValidatedUseLocalLicenseServer == UseLocalLicenseServer)
                 return;
 
             lastValidatedLicenseKey = normalizedLicenseKey;
+            lastValidatedMachineId = machineId;
             lastValidatedUseLocalLicenseServer = UseLocalLicenseServer;
 
             if (string.IsNullOrWhiteSpace(normalizedLicenseKey))
@@ -367,7 +443,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 
             try
             {
-                string payload = "{\"licenseKey\":\"" + EscapeJsonValue(normalizedLicenseKey) + "\",\"product\":\"" + EscapeJsonValue(ProductDisplayName) + "\"}";
+                string payload = "{\"licenseKey\":\"" + EscapeJsonValue(normalizedLicenseKey) + "\",\"license_key\":\"" + EscapeJsonValue(normalizedLicenseKey) + "\",\"product\":\"" + EscapeJsonValue(ProductDisplayName) + "\",\"product_name\":\"" + EscapeJsonValue(ProductDisplayName) + "\",\"machineId\":\"" + EscapeJsonValue(machineId) + "\",\"machine_id\":\"" + EscapeJsonValue(machineId) + "\"}";
                 byte[] payloadBytes = Encoding.UTF8.GetBytes(payload);
 
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(GetLicenseServerUrl());
@@ -390,10 +466,13 @@ namespace NinjaTrader.NinjaScript.Indicators
                     bool isValid =
                         responseText.IndexOf("\"valid\":true", StringComparison.OrdinalIgnoreCase) >= 0 ||
                         responseText.IndexOf("\"valid\": true", StringComparison.OrdinalIgnoreCase) >= 0;
+                    string responseMessage = ExtractResponseMessage(responseText);
 
                     SetLicenseState(
                         isValid,
-                        isValid ? string.Empty : InvalidLicenseMessage);
+                        isValid
+                            ? ActiveLicenseMessage
+                            : (string.IsNullOrWhiteSpace(responseMessage) ? InvalidLicenseMessage : responseMessage));
                 }
             }
             catch (Exception ex)
@@ -414,6 +493,8 @@ namespace NinjaTrader.NinjaScript.Indicators
             if (IsLicenseCurrentlyValid())
                 return true;
 
+            showLicenseEditor = true;
+            ApplyLicenseStateToUi();
             SetInfoText(string.IsNullOrWhiteSpace(licenseStatusMessage) ? InvalidLicenseMessage : licenseStatusMessage);
             return false;
         }
@@ -421,6 +502,34 @@ namespace NinjaTrader.NinjaScript.Indicators
         private void ApplyLicenseStateToUi()
         {
             bool canTrade = licenseValidated && licenseIsValid;
+            bool shouldShowLicenseEditor = !canTrade || showLicenseEditor;
+
+            if (licenseKeyTextBox != null && !licenseKeyTextBox.IsKeyboardFocused)
+                licenseKeyTextBox.Text = LicenseKey ?? string.Empty;
+
+            if (licenseStatusText != null)
+            {
+                licenseStatusText.Text = canTrade ? ActiveLicenseMessage : (string.IsNullOrWhiteSpace(licenseStatusMessage) ? InvalidLicenseMessage : licenseStatusMessage);
+                licenseStatusText.Foreground = canTrade ? Brushes.LightGreen : Brushes.OrangeRed;
+            }
+
+            if (licenseBorder != null)
+                licenseBorder.Visibility = (!canTrade || shouldShowLicenseEditor) ? Visibility.Visible : Visibility.Collapsed;
+
+            if (licenseKeyTextBox != null)
+                licenseKeyTextBox.Visibility = shouldShowLicenseEditor ? Visibility.Visible : Visibility.Collapsed;
+
+            if (applyLicenseButton != null)
+                applyLicenseButton.Visibility = shouldShowLicenseEditor ? Visibility.Visible : Visibility.Collapsed;
+
+            if (changeLicenseButton != null)
+                changeLicenseButton.Visibility = canTrade && !shouldShowLicenseEditor ? Visibility.Visible : Visibility.Collapsed;
+
+            if (panelBody != null)
+            {
+                panelBody.IsEnabled = canTrade;
+                panelBody.Opacity = canTrade ? 1.0 : 0.45;
+            }
 
             if (sendButton != null)
             {
@@ -443,8 +552,13 @@ namespace NinjaTrader.NinjaScript.Indicators
                 closeButton.ToolTip = canTrade ? null : licenseStatusMessage;
             }
 
-            if (!canTrade && infoText != null && !string.IsNullOrWhiteSpace(licenseStatusMessage))
-                infoText.Text = licenseStatusMessage;
+            if (infoText != null)
+            {
+                if (!canTrade && !string.IsNullOrWhiteSpace(licenseStatusMessage))
+                    infoText.Text = licenseStatusMessage;
+                else if (canTrade && (string.IsNullOrWhiteSpace(infoText.Text) || string.Equals(infoText.Text.Trim(), EmptyLicenseMessage, StringComparison.Ordinal) || string.Equals(infoText.Text.Trim(), InvalidLicenseMessage, StringComparison.Ordinal)))
+                    infoText.Text = "Press Long or Short, then click Entry on this chart.";
+            }
         }
 
         private bool TryAcquireHostUiOwnership(Window resolvedHostWindow)
@@ -556,6 +670,9 @@ namespace NinjaTrader.NinjaScript.Indicators
             base.OnRender(chartControl, chartScale);
 
             if (hostWindow != null && !IsHostUiOwner())
+                return;
+
+            if (!IsLicenseCurrentlyValid())
                 return;
 
             if (planMode == PlanMode.Idle || entryTime == default(DateTime))
@@ -711,6 +828,37 @@ namespace NinjaTrader.NinjaScript.Indicators
                 TextAlignment = System.Windows.TextAlignment.Right,
                 Text = string.Empty
             };
+
+            licenseStatusText = new TextBlock
+            {
+                Foreground = Brushes.OrangeRed,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 8, 0),
+                FontSize = 12,
+                VerticalAlignment = VerticalAlignment.Center,
+                Text = EmptyLicenseMessage
+            };
+
+            licenseKeyTextBox = new TextBox
+            {
+                Text = LicenseKey ?? string.Empty,
+                Height = 24,
+                Margin = new Thickness(0, 6, 8, 0),
+                MinWidth = 170
+            };
+
+            applyLicenseButton = CreateButton("Apply License");
+            applyLicenseButton.Height = 24;
+            applyLicenseButton.MinWidth = 104;
+            applyLicenseButton.Padding = new Thickness(8, 0, 8, 0);
+            applyLicenseButton.Margin = new Thickness(0, 6, 0, 0);
+
+            changeLicenseButton = CreateButton("Change License");
+            changeLicenseButton.Height = 22;
+            changeLicenseButton.MinWidth = 102;
+            changeLicenseButton.Padding = new Thickness(8, 0, 8, 0);
+            changeLicenseButton.Margin = new Thickness(0);
+            changeLicenseButton.Visibility = Visibility.Collapsed;
 
             pnlLiveBorder = new Border
             {
@@ -878,6 +1026,37 @@ namespace NinjaTrader.NinjaScript.Indicators
             Grid.SetColumn(titleText, 0);
             headerRow.Children.Add(titleText);
 
+            Grid licenseStatusRow = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+            licenseStatusRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            licenseStatusRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Grid.SetColumn(licenseStatusText, 0);
+            Grid.SetColumn(changeLicenseButton, 1);
+            licenseStatusRow.Children.Add(licenseStatusText);
+            licenseStatusRow.Children.Add(changeLicenseButton);
+
+            Grid licenseEditorGrid = new Grid();
+            licenseEditorGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            licenseEditorGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Grid.SetColumn(licenseKeyTextBox, 0);
+            Grid.SetColumn(applyLicenseButton, 1);
+            licenseEditorGrid.Children.Add(licenseKeyTextBox);
+            licenseEditorGrid.Children.Add(applyLicenseButton);
+
+            StackPanel licenseContent = new StackPanel();
+            licenseContent.Children.Add(licenseStatusRow);
+            licenseContent.Children.Add(licenseEditorGrid);
+
+            licenseBorder = new Border
+            {
+                Background = new WpfSolidColorBrush(WpfColor.FromArgb(255, 42, 42, 42)),
+                BorderBrush = new WpfSolidColorBrush(WpfColor.FromArgb(110, 96, 96, 96)),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(2),
+                Padding = new Thickness(8, 6, 8, 8),
+                Margin = new Thickness(0, 0, 0, 8),
+                Child = licenseContent
+            };
+
             panelBody = new StackPanel();
             panelBody.Children.Add(buttonRow);
             panelBody.Children.Add(tpHeaderRow);
@@ -888,6 +1067,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 
             StackPanel panelContent = new StackPanel();
             panelContent.Children.Add(headerRow);
+            panelContent.Children.Add(licenseBorder);
             panelContent.Children.Add(panelBody);
 
             panel = new Border
@@ -920,6 +1100,8 @@ namespace NinjaTrader.NinjaScript.Indicators
             slPlusButton.Click += OnSlPlusClicked;
             qtyMinusButton.Click += OnQtyMinusClicked;
             qtyPlusButton.Click += OnQtyPlusClicked;
+            applyLicenseButton.Click += OnApplyLicenseClicked;
+            changeLicenseButton.Click += OnChangeLicenseClicked;
             titleText.MouseLeftButtonDown += OnTitleTextMouseLeftButtonDown;
             pnlLiveBorder.MouseLeftButtonDown += OnPnlBorderMouseLeftButtonDown;
 
@@ -971,6 +1153,8 @@ namespace NinjaTrader.NinjaScript.Indicators
             if (slPlusButton != null) slPlusButton.Click -= OnSlPlusClicked;
             if (qtyMinusButton != null) qtyMinusButton.Click -= OnQtyMinusClicked;
             if (qtyPlusButton != null) qtyPlusButton.Click -= OnQtyPlusClicked;
+            if (applyLicenseButton != null) applyLicenseButton.Click -= OnApplyLicenseClicked;
+            if (changeLicenseButton != null) changeLicenseButton.Click -= OnChangeLicenseClicked;
 
             if (titleText != null)
                 titleText.MouseLeftButtonDown -= OnTitleTextMouseLeftButtonDown;
@@ -995,6 +1179,7 @@ namespace NinjaTrader.NinjaScript.Indicators
             ReleaseHostUiOwnership();
 
             panel = null;
+            licenseBorder = null;
             chartGrid = null;
             hostWindow = null;
             uiInstalled = false;
@@ -1444,6 +1629,9 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         private void OnLongClicked(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLicenseAllowsTrading())
+                return;
+
             RefreshChartTraderReferences();
             RefreshActiveChartContext();
             ResetPlan();
@@ -1454,6 +1642,9 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         private void OnShortClicked(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLicenseAllowsTrading())
+                return;
+
             RefreshChartTraderReferences();
             RefreshActiveChartContext();
             ResetPlan();
@@ -1547,7 +1738,41 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         private void OnClearPanelClicked(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLicenseAllowsTrading())
+                return;
+
             ResetPlan();
+        }
+
+        private void OnApplyLicenseClicked(object sender, RoutedEventArgs e)
+        {
+            LicenseKey = licenseKeyTextBox != null ? licenseKeyTextBox.Text ?? string.Empty : string.Empty;
+            licenseValidated = false;
+            showLicenseEditor = false;
+            ValidateLicenseStatus();
+
+            if (!licenseIsValid)
+                showLicenseEditor = true;
+
+            ApplyLicenseStateToUi();
+
+            if (!licenseIsValid && licenseKeyTextBox != null)
+            {
+                licenseKeyTextBox.Focus();
+                licenseKeyTextBox.SelectAll();
+            }
+        }
+
+        private void OnChangeLicenseClicked(object sender, RoutedEventArgs e)
+        {
+            showLicenseEditor = true;
+            ApplyLicenseStateToUi();
+
+            if (licenseKeyTextBox != null)
+            {
+                licenseKeyTextBox.Focus();
+                licenseKeyTextBox.SelectAll();
+            }
         }
 
         private void TrySubmitPendingCloseRequest()
@@ -1640,6 +1865,9 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         private void OnTpMinusClicked(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLicenseAllowsTrading())
+                return;
+
             double step = GetPointsAdjustmentStep();
             tpPointsValue = NormalizePointValue(Math.Max(step, tpPointsValue - step));
             RefreshPointControls();
@@ -1648,6 +1876,9 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         private void OnTpPlusClicked(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLicenseAllowsTrading())
+                return;
+
             tpPointsValue = NormalizePointValue(tpPointsValue + GetPointsAdjustmentStep());
             RefreshPointControls();
             ReapplyOffsetsIfReady();
@@ -1655,6 +1886,9 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         private void OnSlMinusClicked(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLicenseAllowsTrading())
+                return;
+
             double step = GetPointsAdjustmentStep();
             slPointsValue = NormalizePointValue(Math.Max(step, slPointsValue - step));
             RefreshPointControls();
@@ -1663,6 +1897,9 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         private void OnSlPlusClicked(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLicenseAllowsTrading())
+                return;
+
             slPointsValue = NormalizePointValue(slPointsValue + GetPointsAdjustmentStep());
             RefreshPointControls();
             ReapplyOffsetsIfReady();
@@ -1670,11 +1907,17 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         private void OnQtyMinusClicked(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLicenseAllowsTrading())
+                return;
+
             SetPanelQuantity(panelQuantity - 1);
         }
 
         private void OnQtyPlusClicked(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLicenseAllowsTrading())
+                return;
+
             SetPanelQuantity(panelQuantity + 1);
         }
 
@@ -1864,6 +2107,9 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         private void OnChartMouseDown(object sender, MouseButtonEventArgs e)
         {
+            if (!EnsureLicenseAllowsTrading())
+                return;
+
             RefreshChartTraderReferences();
             RefreshActiveChartContext();
             ChartControl chartControl = sender as ChartControl ?? GetInteractionChartControl();
@@ -1906,6 +2152,9 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         private void OnChartMouseMove(object sender, MouseEventArgs e)
         {
+            if (!IsLicenseCurrentlyValid())
+                return;
+
             RefreshActiveChartContext();
             ChartControl chartControl = sender as ChartControl ?? GetInteractionChartControl();
             if (chartControl == null || planMode != PlanMode.Ready)
@@ -1981,6 +2230,9 @@ namespace NinjaTrader.NinjaScript.Indicators
 
             if (Mouse.Captured == chartControl)
                 Mouse.Capture(null);
+
+            if (!IsLicenseCurrentlyValid())
+                return;
 
             if (hadDrag && planMode == PlanMode.Ready)
             {
@@ -3914,6 +4166,12 @@ namespace NinjaTrader.NinjaScript.Indicators
         {
             if (plannerOverlay == null)
                 return;
+
+            if (!IsLicenseCurrentlyValid())
+            {
+                plannerOverlay.Children.Clear();
+                return;
+            }
 
             if (!IsCurrentChartVisible())
             {

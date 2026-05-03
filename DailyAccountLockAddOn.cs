@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -25,6 +26,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         private const string ProductionLicenseServerUrl = "https://goodgainsindicators.com/api/verify-license";
         private const string EmptyLicenseMessage = "Enter License Key";
         private const string InvalidLicenseMessage = "Invalid License";
+        private const string ActiveLicenseMessage = "License active";
         private const int LicenseRequestTimeoutMs = 5000;
         private readonly Dictionary<string, LockState> lockStates = new Dictionary<string, LockState>(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<Account> subscribedAccounts = new HashSet<Account>();
@@ -42,6 +44,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         private bool lastValidatedUseLocalLicenseServer;
         private string licenseStatusMessage;
         private string lastValidatedLicenseKey;
+        private string lastValidatedMachineId;
 
         public string LicenseKey { get; set; }
         public bool UseLocalLicenseServer { get; set; }
@@ -58,6 +61,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                 licenseIsValid = false;
                 licenseStatusMessage = string.Empty;
                 lastValidatedLicenseKey = string.Empty;
+                lastValidatedMachineId = string.Empty;
                 lastValidatedUseLocalLicenseServer = UseLocalLicenseServer;
             }
             else if (State == State.Active)
@@ -647,12 +651,75 @@ namespace NinjaTrader.NinjaScript.AddOns
                 .Replace("\n", "\\n");
         }
 
+        private string GetMachineId()
+        {
+            try
+            {
+                string rawMachineIdentity = string.Join("|",
+                    Environment.MachineName ?? string.Empty,
+                    Environment.UserDomainName ?? string.Empty,
+                    Environment.ProcessorCount.ToString(),
+                    Environment.Is64BitOperatingSystem ? "x64" : "x86");
+
+                using (SHA256 sha = SHA256.Create())
+                {
+                    byte[] hashBytes = sha.ComputeHash(Encoding.UTF8.GetBytes(rawMachineIdentity));
+                    StringBuilder builder = new StringBuilder(hashBytes.Length * 2);
+
+                    foreach (byte hashByte in hashBytes)
+                        builder.Append(hashByte.ToString("x2"));
+
+                    return builder.ToString();
+                }
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private string ExtractResponseMessage(string responseText)
+        {
+            if (string.IsNullOrWhiteSpace(responseText))
+                return string.Empty;
+
+            const string propertyName = "\"message\"";
+            int propertyIndex = responseText.IndexOf(propertyName, StringComparison.OrdinalIgnoreCase);
+            if (propertyIndex < 0)
+                return string.Empty;
+
+            int colonIndex = responseText.IndexOf(':', propertyIndex + propertyName.Length);
+            if (colonIndex < 0)
+                return string.Empty;
+
+            int valueStartIndex = responseText.IndexOf('"', colonIndex + 1);
+            if (valueStartIndex < 0)
+                return string.Empty;
+
+            int valueEndIndex = valueStartIndex + 1;
+            while (valueEndIndex < responseText.Length)
+            {
+                if (responseText[valueEndIndex] == '"' && responseText[valueEndIndex - 1] != '\\')
+                    break;
+
+                valueEndIndex++;
+            }
+
+            if (valueEndIndex >= responseText.Length)
+                return string.Empty;
+
+            return responseText
+                .Substring(valueStartIndex + 1, valueEndIndex - valueStartIndex - 1)
+                .Replace("\\\"", "\"")
+                .Replace("\\\\", "\\");
+        }
+
         private void SetLicenseState(bool isValid, string message)
         {
             licenseValidated = true;
             licenseIsValid = isValid;
             licenseStatusMessage = isValid
-                ? "License active for GG Daily Account Lock AddOn."
+                ? ActiveLicenseMessage
                 : (string.IsNullOrWhiteSpace(message)
                     ? InvalidLicenseMessage
                     : message);
@@ -663,13 +730,16 @@ namespace NinjaTrader.NinjaScript.AddOns
         private void ValidateLicenseStatus()
         {
             string normalizedLicenseKey = NormalizeLicenseKey(LicenseKey);
+            string machineId = GetMachineId();
 
             if (licenseValidated &&
                 string.Equals(lastValidatedLicenseKey, normalizedLicenseKey, StringComparison.Ordinal) &&
+                string.Equals(lastValidatedMachineId, machineId, StringComparison.Ordinal) &&
                 lastValidatedUseLocalLicenseServer == UseLocalLicenseServer)
                 return;
 
             lastValidatedLicenseKey = normalizedLicenseKey;
+            lastValidatedMachineId = machineId;
             lastValidatedUseLocalLicenseServer = UseLocalLicenseServer;
 
             if (string.IsNullOrWhiteSpace(normalizedLicenseKey))
@@ -688,7 +758,7 @@ namespace NinjaTrader.NinjaScript.AddOns
 
             try
             {
-                string payload = "{\"licenseKey\":\"" + EscapeJsonValue(normalizedLicenseKey) + "\",\"product\":\"" + EscapeJsonValue(ProductDisplayName) + "\"}";
+                string payload = "{\"licenseKey\":\"" + EscapeJsonValue(normalizedLicenseKey) + "\",\"license_key\":\"" + EscapeJsonValue(normalizedLicenseKey) + "\",\"product\":\"" + EscapeJsonValue(ProductDisplayName) + "\",\"product_name\":\"" + EscapeJsonValue(ProductDisplayName) + "\",\"machineId\":\"" + EscapeJsonValue(machineId) + "\",\"machine_id\":\"" + EscapeJsonValue(machineId) + "\"}";
                 byte[] payloadBytes = Encoding.UTF8.GetBytes(payload);
 
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(GetLicenseServerUrl());
@@ -711,10 +781,13 @@ namespace NinjaTrader.NinjaScript.AddOns
                     bool isValid =
                         responseText.IndexOf("\"valid\":true", StringComparison.OrdinalIgnoreCase) >= 0 ||
                         responseText.IndexOf("\"valid\": true", StringComparison.OrdinalIgnoreCase) >= 0;
+                    string responseMessage = ExtractResponseMessage(responseText);
 
                     SetLicenseState(
                         isValid,
-                        isValid ? "License active for GG Daily Account Lock AddOn." : InvalidLicenseMessage);
+                        isValid
+                            ? ActiveLicenseMessage
+                            : (string.IsNullOrWhiteSpace(responseMessage) ? InvalidLicenseMessage : responseMessage));
                 }
             }
             catch (Exception ex)
@@ -924,8 +997,11 @@ namespace NinjaTrader.NinjaScript.AddOns
         {
             private readonly DailyAccountLockAddOn owner;
             private readonly StackPanel rowsPanel;
+            private readonly StackPanel licenseEntryPanel;
             private readonly TextBox licenseKeyTextBox;
             private readonly TextBlock licenseStatusText;
+            private readonly Button changeLicenseButton;
+            private bool showLicenseEditor;
 
             public DailyAccountLockWindow(DailyAccountLockAddOn owner)
             {
@@ -945,18 +1021,22 @@ namespace NinjaTrader.NinjaScript.AddOns
                     Margin = new Thickness(12)
                 };
 
+                licenseEntryPanel = new StackPanel
+                {
+                    Margin = new Thickness(0, 0, 0, 10)
+                };
+
                 TextBlock licenseLabel = new TextBlock
                 {
                     Text = "License Key",
                     Margin = new Thickness(0, 0, 0, 6),
                     Foreground = Brushes.Gainsboro
                 };
-                DockPanel.SetDock(licenseLabel, Dock.Top);
-                root.Children.Add(licenseLabel);
+                licenseEntryPanel.Children.Add(licenseLabel);
 
                 Grid licenseGrid = new Grid
                 {
-                    Margin = new Thickness(0, 0, 0, 10)
+                    Margin = new Thickness(0)
                 };
                 licenseGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 licenseGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -978,6 +1058,8 @@ namespace NinjaTrader.NinjaScript.AddOns
                 applyLicenseButton.Click += (s, e) =>
                 {
                     owner.UpdateLicenseKey(licenseKeyTextBox.Text);
+                    showLicenseEditor = !owner.IsLicenseCurrentlyValid();
+                    RefreshLicenseUi();
                     RefreshRows();
                 };
 
@@ -985,16 +1067,47 @@ namespace NinjaTrader.NinjaScript.AddOns
                 Grid.SetColumn(applyLicenseButton, 1);
                 licenseGrid.Children.Add(licenseKeyTextBox);
                 licenseGrid.Children.Add(applyLicenseButton);
-                DockPanel.SetDock(licenseGrid, Dock.Top);
-                root.Children.Add(licenseGrid);
+                licenseEntryPanel.Children.Add(licenseGrid);
+
+                DockPanel.SetDock(licenseEntryPanel, Dock.Top);
+                root.Children.Add(licenseEntryPanel);
+
+                Grid licenseStatusGrid = new Grid
+                {
+                    Margin = new Thickness(0, 0, 0, 10)
+                };
+                licenseStatusGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                licenseStatusGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
                 licenseStatusText = new TextBlock
                 {
                     TextWrapping = TextWrapping.Wrap,
-                    Margin = new Thickness(0, 0, 0, 10)
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(0, 0, 8, 0)
                 };
-                DockPanel.SetDock(licenseStatusText, Dock.Top);
-                root.Children.Add(licenseStatusText);
+
+                changeLicenseButton = new Button
+                {
+                    Content = "Change License",
+                    MinWidth = 110,
+                    Height = 24,
+                    Visibility = Visibility.Collapsed
+                };
+                changeLicenseButton.Click += (s, e) =>
+                {
+                    showLicenseEditor = true;
+                    RefreshLicenseUi();
+                    licenseKeyTextBox.Focus();
+                    licenseKeyTextBox.SelectAll();
+                };
+
+                Grid.SetColumn(licenseStatusText, 0);
+                Grid.SetColumn(changeLicenseButton, 1);
+                licenseStatusGrid.Children.Add(licenseStatusText);
+                licenseStatusGrid.Children.Add(changeLicenseButton);
+
+                DockPanel.SetDock(licenseStatusGrid, Dock.Top);
+                root.Children.Add(licenseStatusGrid);
 
                 TextBlock info = new TextBlock
                 {
@@ -1041,15 +1154,25 @@ namespace NinjaTrader.NinjaScript.AddOns
             private void RefreshLicenseUi()
             {
                 bool isLicenseValid = owner.IsLicenseCurrentlyValid();
+                if (!isLicenseValid)
+                    showLicenseEditor = true;
+
+                bool shouldShowEditor = !isLicenseValid || showLicenseEditor;
 
                 if (licenseKeyTextBox != null && !licenseKeyTextBox.IsKeyboardFocused)
                     licenseKeyTextBox.Text = owner.GetLicenseKeyValue();
 
+                if (licenseEntryPanel != null)
+                    licenseEntryPanel.Visibility = shouldShowEditor ? Visibility.Visible : Visibility.Collapsed;
+
                 if (licenseStatusText != null)
                 {
-                    licenseStatusText.Text = owner.GetLicenseStatusMessage();
+                    licenseStatusText.Text = isLicenseValid ? ActiveLicenseMessage : owner.GetLicenseStatusMessage();
                     licenseStatusText.Foreground = isLicenseValid ? Brushes.LightGreen : Brushes.OrangeRed;
                 }
+
+                if (changeLicenseButton != null)
+                    changeLicenseButton.Visibility = isLicenseValid && !shouldShowEditor ? Visibility.Visible : Visibility.Collapsed;
             }
 
             private UIElement CreateAccountRow(Account account)

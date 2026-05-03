@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { normalizeCouponCode, validateCouponForProduct } from "@/lib/coupons";
-import { bundle, products } from "@/lib/products";
+import { bundle, getProductPrice, normalizeDeviceCount, products } from "@/lib/products";
 import { createPayPalOrder, encodePayPalCustomId, isPayPalConfigured } from "@/lib/paypal";
 
 type CheckoutBody = {
@@ -9,6 +9,7 @@ type CheckoutBody = {
   priceIdEnv?: string;
   couponCode?: string;
   customerEmail?: string;
+  deviceCount?: number;
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
   const priceEnvName = body.priceIdEnv?.trim();
   const couponCode = normalizeCouponCode(body.couponCode);
   const customerEmail = body.customerEmail?.trim().toLowerCase();
+  const deviceCount = normalizeDeviceCount(body.deviceCount);
 
   if (!productName || !priceEnvName || !productId || !customerEmail) {
     return NextResponse.json({ error: "Missing checkout product data." }, { status: 400 });
@@ -32,27 +34,30 @@ export async function POST(request: Request) {
   try {
     const matchedProduct =
       products.find((product) => product.name === productName && product.slug === productId) ??
-      (productName === bundle.name && productId === bundle.id
-        ? {
-            slug: bundle.id,
-            name: bundle.name,
-            description: "Bundle of all four Good Gains tools.",
-            price: bundle.price
-          }
-        : null);
+      (productName === bundle.name && productId === bundle.id ? bundle : null);
 
     if (!matchedProduct) {
       return NextResponse.json({ error: "Unknown product selected for checkout." }, { status: 400 });
     }
 
-    let finalPrice = matchedProduct.price;
+    const isBundleCheckout = productName === bundle.name && productId === bundle.id;
+
+    if (isBundleCheckout && deviceCount !== 1) {
+      return NextResponse.json(
+        { error: "The bundle is currently available as a 1-device license. 2-device bundle upgrades are handled later." },
+        { status: 400 }
+      );
+    }
+
+    const basePrice = getProductPrice(matchedProduct, isBundleCheckout ? 1 : deviceCount);
+    let finalPrice = basePrice;
     let appliedCouponCode: string | null = null;
 
     if (couponCode) {
       const validation = await validateCouponForProduct({
         code: couponCode,
         productId,
-        price: matchedProduct.price
+        price: basePrice
       });
 
       if (!validation.valid || !validation.coupon || validation.finalPrice === null) {
@@ -90,7 +95,8 @@ export async function POST(request: Request) {
       customId: encodePayPalCustomId({
         productName,
         couponCode: appliedCouponCode || undefined,
-        customerEmail
+        customerEmail,
+        deviceCount: isBundleCheckout ? 1 : deviceCount
       }),
       description: matchedProduct.description,
       amount: finalPrice

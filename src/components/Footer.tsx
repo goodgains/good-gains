@@ -9,7 +9,8 @@ const legalLinks: { href: Route; label: string }[] = [
   { href: "/privacy-policy", label: "Privacy Policy" },
   { href: "/refund-policy", label: "Refund Policy" },
   { href: "/risk-disclaimer", label: "Risk Disclaimer" },
-  { href: "/recover-license", label: "Recover License" }
+  { href: "/recover-license", label: "Recover License" },
+  { href: "/reset-license", label: "Reset Device Lock" }
 ];
 
 export function Footer() {

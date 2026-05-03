@@ -62,6 +62,7 @@ type PayPalCustomIdPayload = {
   productName: string;
   couponCode?: string;
   customerEmail?: string;
+  deviceCount?: 1 | 2;
 };
 
 function getPayPalApiBaseUrl() {
@@ -104,13 +105,15 @@ export function parsePayPalCustomId(customId?: string | null) {
     return {
       productName: parsed.productName,
       couponCode: parsed.couponCode || null,
-      customerEmail: parsed.customerEmail?.trim().toLowerCase() || null
+      customerEmail: parsed.customerEmail?.trim().toLowerCase() || null,
+      deviceCount: parsed.deviceCount === 2 ? 2 : 1
     };
   } catch {
     return {
       productName: customId,
       couponCode: null,
-      customerEmail: null
+      customerEmail: null,
+      deviceCount: 1
     };
   }
 }

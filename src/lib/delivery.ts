@@ -30,6 +30,7 @@ export type DeliveryRecord = {
   expiresAt: string | null;
   maxDownloads: number;
   downloadCount: number;
+  maxDevices: number;
   createdAt: string;
   updatedAt: string;
   couponCode?: string | null;
@@ -48,6 +49,7 @@ type StatelessDeliveryPayload = {
   licenseKey: string;
   expiresAt: string | null;
   maxDownloads: number;
+  maxDevices: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -106,6 +108,7 @@ function buildStatelessDeliveryPayload(record: DeliveryRecord): StatelessDeliver
     licenseKey: record.licenseKey,
     expiresAt: record.expiresAt,
     maxDownloads: record.maxDownloads,
+    maxDevices: record.maxDevices,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt
   };
@@ -174,6 +177,7 @@ function parseStatelessDeliveryToken(token: string) {
       expiresAt: payload.expiresAt,
       maxDownloads: payload.maxDownloads || DEFAULT_MAX_DOWNLOADS,
       downloadCount: 0,
+      maxDevices: payload.maxDevices || 1,
       createdAt: payload.createdAt,
       updatedAt: payload.updatedAt
     };
@@ -212,6 +216,7 @@ async function readLegacyRecords() {
         expiresAt: record.expiresAt ?? null,
         maxDownloads: record.maxDownloads ?? DEFAULT_MAX_DOWNLOADS,
         downloadCount: record.downloadCount ?? 0,
+        maxDevices: record.maxDevices ?? 1,
         createdAt: record.createdAt ?? new Date().toISOString(),
         updatedAt: record.updatedAt ?? new Date().toISOString()
       } satisfies DeliveryRecord;
@@ -295,6 +300,7 @@ export async function createDeliveryRecord(input: {
   createdAt?: string;
   expiresAt?: string | null;
   maxDownloads?: number;
+  maxDevices?: number;
   couponCode?: string | null;
   amountUsd?: number | null;
 }) {
@@ -328,6 +334,7 @@ export async function createDeliveryRecord(input: {
     expiresAt,
     maxDownloads: input.maxDownloads ?? DEFAULT_MAX_DOWNLOADS,
     downloadCount: 0,
+    maxDevices: Math.max(1, Math.min(2, input.maxDevices ?? 1)),
     createdAt: timestamp,
     updatedAt: timestamp,
     couponCode: input.couponCode ?? null
@@ -336,7 +343,8 @@ export async function createDeliveryRecord(input: {
   record.token = buildStatelessDeliveryToken(buildStatelessDeliveryPayload(record));
   try {
     const persistedIds = await persistSupabaseDeliveryRecord(record, {
-      amountUsd: input.amountUsd ?? null
+      amountUsd: input.amountUsd ?? null,
+      maxDevices: record.maxDevices
     });
 
     if (persistedIds) {

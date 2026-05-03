@@ -21,6 +21,13 @@ export type ProductUpdateEmailInput = {
   changelog: string;
 };
 
+export type LicenseResetCodeEmailInput = {
+  customerEmail: string;
+  licenseKey: string;
+  verificationCode: string;
+  expiresInMinutes: number;
+};
+
 function resolveConfiguredEmail(value?: string | null) {
   const normalized = value?.trim();
   if (!normalized || !normalized.includes("@")) {
@@ -303,6 +310,48 @@ function buildProductUpdateContent(input: ProductUpdateEmailInput) {
 
   return {
     subject: `New update available: ${safeProductName} v${safeVersion}`,
+    text,
+    html
+  };
+}
+
+function buildLicenseResetCodeContent(input: LicenseResetCodeEmailInput) {
+  const safeLicenseKey = input.licenseKey.trim().toUpperCase();
+  const safeCode = input.verificationCode.trim().toUpperCase();
+
+  const text = [
+    "Your Good Gains license reset verification code",
+    "",
+    `License key: ${safeLicenseKey}`,
+    `Verification code: ${safeCode}`,
+    `This code expires in ${input.expiresInMinutes} minutes.`,
+    "",
+    `If you did not request this reset, contact ${siteConfig.supportEmail}.`
+  ].join("\n");
+
+  const html = `
+    <div style="background:#09090b;padding:32px;font-family:Arial,sans-serif;color:#e4e4e7;">
+      <div style="max-width:720px;margin:0 auto;border:1px solid rgba(255,255,255,0.08);border-radius:24px;background:#111115;padding:32px;">
+        <p style="margin:0 0 12px;font-size:12px;letter-spacing:0.28em;text-transform:uppercase;color:#6ee7b7;">License Reset</p>
+        <h1 style="margin:0 0 12px;font-size:30px;line-height:1.2;color:#ffffff;">Your verification code</h1>
+        <p style="margin:0 0 18px;font-size:16px;line-height:1.8;color:#d4d4d8;">
+          Enter the code below to reset the device lock on your Good Gains license.
+        </p>
+        <div style="border:1px solid rgba(255,255,255,0.08);border-radius:20px;background:#09090b;padding:20px;">
+          <p style="margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.24em;color:#a1a1aa;">License Key</p>
+          <p style="margin:0 0 18px;font-size:18px;font-weight:600;color:#ffffff;">${escapeHtml(safeLicenseKey)}</p>
+          <p style="margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.24em;color:#a1a1aa;">Verification Code</p>
+          <p style="margin:0;font-size:28px;font-weight:700;letter-spacing:0.18em;color:#6ee7b7;">${escapeHtml(safeCode)}</p>
+        </div>
+        <p style="margin:18px 0 0;font-size:14px;line-height:1.8;color:#d4d4d8;">
+          This code expires in ${input.expiresInMinutes} minutes. If you did not request this reset, contact ${escapeHtml(siteConfig.supportEmail)}.
+        </p>
+      </div>
+    </div>
+  `;
+
+  return {
+    subject: "Your Good Gains license reset verification code",
     text,
     html
   };
@@ -710,6 +759,76 @@ export async function sendProductUpdateEmail(input: ProductUpdateEmailInput) {
     fallbackFromEmail,
     replyTo
   });
+
+  if (!hasRealResendConfig() || !resendApiKey || !fromEmail) {
+    throw new Error(
+      `Email provider is not configured. Required env vars: RESEND_API_KEY and RESEND_FROM_EMAIL. Current from="${fromEmail ?? ""}" replyTo="${replyTo}".`
+    );
+  }
+
+  const primaryFrom = `${fromName} <${fromEmail}>`;
+  const fallbackFrom = fallbackFromEmail ? `${fromName} <${fallbackFromEmail}>` : null;
+
+  try {
+    const result = await sendViaResendWithRetry({
+      resendApiKey,
+      from: primaryFrom,
+      to: [input.customerEmail],
+      replyTo,
+      subject: content.subject,
+      html: content.html,
+      text: content.text
+    });
+
+    return {
+      mode: "resend" as const,
+      id: result.id,
+      status: result.status,
+      providerResponse: result.result,
+      from: primaryFrom,
+      replyTo,
+      to: input.customerEmail
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const shouldRetryWithFallback =
+      Boolean(fallbackFromEmail && fallbackFrom) &&
+      !fallbackFrom!.toLowerCase().includes(fromEmail.toLowerCase()) &&
+      errorMessage.toLowerCase().includes("domain is not verified");
+
+    if (!shouldRetryWithFallback) {
+      throw error;
+    }
+
+    const fallbackResult = await sendViaResendWithRetry({
+      resendApiKey,
+      from: fallbackFrom!,
+      to: [input.customerEmail],
+      replyTo,
+      subject: content.subject,
+      html: content.html,
+      text: content.text
+    });
+
+    return {
+      mode: "resend-fallback" as const,
+      id: fallbackResult.id,
+      status: fallbackResult.status,
+      providerResponse: fallbackResult.result,
+      from: fallbackFrom!,
+      replyTo,
+      to: input.customerEmail
+    };
+  }
+}
+
+export async function sendLicenseResetCodeEmail(input: LicenseResetCodeEmailInput) {
+  const content = buildLicenseResetCodeContent(input);
+  const resendApiKey = process.env.RESEND_API_KEY?.trim();
+  const fromEmail = resolveConfiguredEmail(process.env.RESEND_FROM_EMAIL);
+  const fallbackFromEmail = resolveConfiguredEmail(process.env.RESEND_FALLBACK_FROM_EMAIL);
+  const fromName = siteConfig.emailFromName;
+  const replyTo = siteConfig.supportEmail;
 
   if (!hasRealResendConfig() || !resendApiKey || !fromEmail) {
     throw new Error(

@@ -141,7 +141,7 @@ function RrPanelCta({ product }: { product: Product }) {
       <p className="text-xs uppercase tracking-[0.24em] text-emerald-300">Ready to trade smarter?</p>
       <h3 className="mt-3 text-3xl font-semibold text-white md:text-4xl">Take control of your risk — on every trade you enter</h3>
       <div className="relative z-20 mx-auto mt-6 max-w-md pointer-events-auto">
-        <BuyButton productName={product.name} productId={product.slug} priceIdEnv={product.stripePriceEnv} label="Get the RR Panel" helperText="Lifetime updates + ongoing improvements" showCoupon />
+        <BuyButton productName={product.name} productId={product.slug} priceIdEnv={product.stripePriceEnv} label="Get the RR Panel" helperText="Lifetime updates + ongoing improvements" showCoupon allowTwoDeviceOption />
         <p className="mt-4 text-sm font-medium text-zinc-200">Used by traders who want full control over risk and execution</p>
         <PaymentTrust />
       </div>
@@ -202,7 +202,7 @@ function SmiMidCta({ product }: { product: Product }) {
     <article className="w-full rounded-[1.85rem] border border-emerald-400/15 bg-[radial-gradient(circle_at_top,_rgba(52,211,153,0.12),_rgba(0,0,0,0.95)_60%)] px-6 py-7 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_0_28px_rgba(74,222,128,0.06)] md:px-8">
       <h3 className="text-2xl font-semibold text-white md:text-[2rem]">Ready to start entering trades BEFORE the move?</h3>
       <div className="relative z-20 mx-auto mt-5 max-w-md pointer-events-auto">
-        <BuyButton productName={product.name} productId={product.slug} priceIdEnv={product.stripePriceEnv} label="Get GG SMI Precision – Instant Access" helperText="Instant download · Lifetime updates · Built for NinjaTrader 8" showCoupon />
+        <BuyButton productName={product.name} productId={product.slug} priceIdEnv={product.stripePriceEnv} label="Get GG SMI Precision – Instant Access" helperText="Instant download · Lifetime updates · Built for NinjaTrader 8" showCoupon allowTwoDeviceOption />
       </div>
       <p className="mt-4 text-sm font-medium text-zinc-200">Instant download · Lifetime updates · Built for NinjaTrader 8</p>
       <div className="mx-auto mt-5 max-w-2xl text-left">
@@ -231,7 +231,7 @@ function DailyLockMidCta({ product }: { product: Product }) {
       <article className="w-full rounded-[1.85rem] border border-emerald-400/15 bg-[radial-gradient(circle_at_top,_rgba(52,211,153,0.12),_rgba(0,0,0,0.95)_60%)] px-6 py-7 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_0_28px_rgba(74,222,128,0.06)] md:px-8">
       <h3 className="text-2xl font-semibold text-white md:text-[2rem]">Ready to stop blowing your account in one bad day?</h3>
       <div className="relative z-20 mx-auto mt-5 max-w-md pointer-events-auto">
-        <BuyButton productName={product.name} productId={product.slug} priceIdEnv={product.stripePriceEnv} label="Get GG Daily Account Lock – Instant Access" helperText="Instant download · Lifetime updates · Built for NinjaTrader 8" showCoupon />
+        <BuyButton productName={product.name} productId={product.slug} priceIdEnv={product.stripePriceEnv} label="Get GG Daily Account Lock – Instant Access" helperText="Instant download · Lifetime updates · Built for NinjaTrader 8" showCoupon allowTwoDeviceOption />
       </div>
       <p className="mt-4 text-sm font-medium text-zinc-200">Instant download · Lifetime updates · Built for NinjaTrader 8</p>
     </article>
@@ -395,7 +395,7 @@ function SmiFinalCta({ product }: { product: Product }) {
       <p className="text-xs uppercase tracking-[0.24em] text-emerald-300">FINAL CTA</p>
       <h3 className="mt-3 text-3xl font-semibold text-white md:text-4xl">Trade momentum shifts with confidence</h3>
       <div className="relative z-20 mx-auto mt-6 max-w-md pointer-events-auto">
-        <BuyButton productName={product.name} productId={product.slug} priceIdEnv={product.stripePriceEnv} label="Get GG SMI Precision Now" helperText="Instant access for NinjaTrader 8" showCoupon />
+        <BuyButton productName={product.name} productId={product.slug} priceIdEnv={product.stripePriceEnv} label="Get GG SMI Precision Now" helperText="Instant access for NinjaTrader 8" showCoupon allowTwoDeviceOption />
         <PaymentTrust />
       </div>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-sm text-zinc-100">
@@ -414,7 +414,7 @@ function DailyFinalCta({ product }: { product: Product }) {
       <p className="text-xs uppercase tracking-[0.24em] text-emerald-300">FINAL CTA</p>
       <h3 className="mt-3 text-3xl font-semibold text-white md:text-4xl">Protect your profits. Lock your day.</h3>
       <div className="relative z-20 mx-auto mt-6 max-w-md pointer-events-auto">
-        <BuyButton productName={product.name} productId={product.slug} priceIdEnv={product.stripePriceEnv} label="Get GG Daily Account Lock – Instant Access" helperText="Instant access for NinjaTrader 8" showCoupon />
+        <BuyButton productName={product.name} productId={product.slug} priceIdEnv={product.stripePriceEnv} label="Get GG Daily Account Lock – Instant Access" helperText="Instant access for NinjaTrader 8" showCoupon allowTwoDeviceOption />
         <PaymentTrust />
       </div>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-sm text-zinc-100">

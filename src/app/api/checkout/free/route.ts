@@ -8,7 +8,7 @@ import {
 import { incrementCouponUsage, normalizeCouponCode, validateCouponForProduct } from "@/lib/coupons";
 import { logSupabaseDeliveryEvent } from "@/lib/customer-db";
 import { sendPurchaseEmail } from "@/lib/email";
-import { bundle, products } from "@/lib/products";
+import { bundle, getProductPrice, normalizeDeviceCount, products } from "@/lib/products";
 import { siteConfig } from "@/lib/site";
 
 type FreeCheckoutBody = {
@@ -16,6 +16,7 @@ type FreeCheckoutBody = {
   productId?: string;
   couponCode?: string;
   customerEmail?: string;
+  deviceCount?: number;
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
     const productId = body.productId?.trim();
     const couponCode = normalizeCouponCode(body.couponCode);
     const customerEmail = body.customerEmail?.trim().toLowerCase();
+    const deviceCount = normalizeDeviceCount(body.deviceCount);
 
     console.log("Free coupon checkout request received", {
       productName: productName ?? null,
@@ -66,13 +68,7 @@ export async function POST(request: Request) {
 
     const matchedProduct =
       products.find((product) => product.name === productName && product.slug === productId) ??
-      (productName === bundle.name && productId === bundle.id
-        ? {
-            slug: bundle.id,
-            name: bundle.name,
-            price: bundle.price
-          }
-        : null);
+      (productName === bundle.name && productId === bundle.id ? bundle : null);
 
     if (!matchedProduct) {
       return NextResponse.json(
@@ -81,10 +77,24 @@ export async function POST(request: Request) {
       );
     }
 
+    const isBundleCheckout = productName === bundle.name && productId === bundle.id;
+
+    if (isBundleCheckout && deviceCount !== 1) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "The bundle is currently available as a 1-device license. 2-device bundle upgrades are handled later."
+        },
+        { status: 400 }
+      );
+    }
+
+    const basePrice = getProductPrice(matchedProduct, isBundleCheckout ? 1 : deviceCount);
+
     const validation = await validateCouponForProduct({
       code: couponCode,
       productId,
-      price: matchedProduct.price
+      price: basePrice
     });
 
     if (!validation.valid || !validation.coupon || validation.finalPrice !== 0) {
@@ -104,6 +114,7 @@ export async function POST(request: Request) {
       customerEmail,
       customerName: "Coupon Access",
       productName,
+      maxDevices: isBundleCheckout ? 1 : deviceCount,
       couponCode: validation.coupon.code,
       amountUsd: 0
     });
