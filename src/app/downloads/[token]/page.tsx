@@ -129,6 +129,25 @@ export default async function PrivateDownloadPage({
 
       <section className="py-16">
         <Container className="space-y-10">
+          {hasBundlePurchase ? (
+            record.maxDevices >= 2 ? (
+              <div className="rounded-[2rem] border border-emerald-400/18 bg-emerald-400/5 p-8">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300">Bundle Upgrade</p>
+                <h2 className="mt-2 text-3xl font-semibold text-white">Your bundle already supports 2 devices</h2>
+                <p className="mt-3 max-w-3xl text-base leading-8 text-zinc-300">
+                  Keep using the same license key on two trading setups. No extra activation is required.
+                </p>
+              </div>
+            ) : (
+              <BundleUpgradeCard
+                defaultEmail={record.customerEmail}
+                defaultLicenseKey={record.licenseKey}
+                hideInputs
+                prominent
+              />
+            )
+          ) : null}
+
           <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
             <div className="rounded-[2rem] border border-white/10 bg-zinc-950/80 p-8">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300">Delivery Dashboard</p>
@@ -203,24 +222,6 @@ export default async function PrivateDownloadPage({
                 <p className="mt-3 text-sm font-medium text-emerald-200">No combined bundle ZIP is required.</p>
               </div>
             </div>
-          ) : null}
-
-          {hasBundlePurchase ? (
-            record.maxDevices >= 2 ? (
-              <div className="rounded-[2rem] border border-emerald-400/18 bg-emerald-400/5 p-8">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300">Bundle Upgrade</p>
-                <h2 className="mt-2 text-3xl font-semibold text-white">Your bundle already supports 2 devices</h2>
-                <p className="mt-3 max-w-3xl text-base leading-8 text-zinc-300">
-                  Keep using the same license key on two trading setups. No extra activation is required.
-                </p>
-              </div>
-            ) : (
-              <BundleUpgradeCard
-                defaultEmail={record.customerEmail}
-                defaultLicenseKey={record.licenseKey}
-                hideInputs
-              />
-            )
           ) : null}
 
           <div className="grid gap-8 lg:grid-cols-[1fr_1fr]" id="install-guide">
