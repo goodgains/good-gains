@@ -173,7 +173,7 @@ export const products: Product[] = [
       "Map the major global session ranges cleanly so you can frame liquidity, reactions, and structure without cluttering the chart.",
     benefitLine: "See key levels before the market moves.",
     price: 79,
-    twoDevicePrice: 139,
+    twoDevicePrice: 119,
     category: "Session Tools",
     stripePriceEnv: "STRIPE_PRICE_SESSION_HIGH_LOW",
     features: [
