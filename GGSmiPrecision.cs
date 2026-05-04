@@ -28,8 +28,10 @@ namespace NinjaTrader.NinjaScript.Indicators
         private const string ProductionLicenseServerUrl = "https://goodgainsindicators.com/api/verify-license";
         private const string EmptyLicenseMessage = "Enter License Key";
         private const string InvalidLicenseMessage = "Invalid License";
-        private const int LicenseRequestTimeoutMs = 5000;
+        private const int LicenseRequestTimeoutMs = 15000;
+        private const int LicenseRetryIntervalSeconds = 15;
         private const string LicenseWarningTag = "GGSMIPRECISION_LICENSE_WARNING";
+        private const string SavedLicenseKeyFileName = "GGSMIPrecision.key";
 
         private Series<double> relativeRangeSeries;
         private Series<double> rangeSeries;
@@ -46,6 +48,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         private string licenseStatusMessage;
         private string lastValidatedLicenseKey;
         private string lastValidatedMachineId;
+        private DateTime lastLicenseValidationAttemptUtc;
 
         [NinjaScriptProperty]
         [Range(1, 15000)]
@@ -81,6 +84,11 @@ namespace NinjaTrader.NinjaScript.Indicators
         [NinjaScriptProperty]
         [Display(Name = "Use Local License Server", Order = 2, GroupName = "License")]
         public bool UseLocalLicenseServer { get; set; }
+
+        public override string DisplayName
+        {
+            get { return ProductDisplayName; }
+        }
 
         [XmlIgnore]
         [Display(Name = "SMI Line Color", Order = 1, GroupName = "Colors")]
@@ -206,7 +214,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 DrawOnPricePanel = false;
                 PaintPriceMarkers = true;
                 ScaleJustification = ScaleJustification.Right;
-                IsSuspendedWhileInactive = true;
+                IsSuspendedWhileInactive = false;
 
                 LengthK = 10;
                 LengthD = 3;
@@ -215,13 +223,13 @@ namespace NinjaTrader.NinjaScript.Indicators
                 Oversold = -40;
                 ShowMiddleLine = true;
 
-                SmiBrush = Brushes.Blue;
-                SignalBrush = Brushes.Yellow;
-                OverboughtLineBrush = Brushes.Green;
-                OversoldLineBrush = Brushes.Red;
-                MiddleLineBrush = Brushes.Gray;
-                OverboughtFillBrush = new SolidColorBrush(WpfColor.FromArgb(87, 0, 128, 0));
-                OversoldFillBrush = new SolidColorBrush(WpfColor.FromArgb(87, 255, 0, 0));
+                SmiBrush = FreezeBrush(Brushes.Blue);
+                SignalBrush = FreezeBrush(Brushes.Yellow);
+                OverboughtLineBrush = FreezeBrush(Brushes.Green);
+                OversoldLineBrush = FreezeBrush(Brushes.Red);
+                MiddleLineBrush = FreezeBrush(Brushes.Gray);
+                OverboughtFillBrush = FreezeBrush(new SolidColorBrush(WpfColor.FromArgb(87, 0, 128, 0)));
+                OversoldFillBrush = FreezeBrush(new SolidColorBrush(WpfColor.FromArgb(87, 255, 0, 0)));
                 LicenseKey = string.Empty;
                 UseLocalLicenseServer = false;
                 licenseValidated = false;
@@ -229,6 +237,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 licenseStatusMessage = string.Empty;
                 lastValidatedLicenseKey = string.Empty;
                 lastValidatedMachineId = string.Empty;
+                lastLicenseValidationAttemptUtc = DateTime.MinValue;
                 lastValidatedUseLocalLicenseServer = UseLocalLicenseServer;
 
                 AddPlot(Brushes.Blue, "SMI");
@@ -239,6 +248,8 @@ namespace NinjaTrader.NinjaScript.Indicators
             }
             else if (State == State.DataLoaded)
             {
+                FreezeBrushSettings();
+
                 relativeRangeSeries = new Series<double>(this);
                 rangeSeries = new Series<double>(this);
 
@@ -253,6 +264,15 @@ namespace NinjaTrader.NinjaScript.Indicators
                 Plots[2].PlotStyle = PlotStyle.Line;
                 Plots[3].PlotStyle = PlotStyle.Line;
                 Plots[4].PlotStyle = PlotStyle.Line;
+                ValidateLicenseStatus();
+            }
+            else if (State == State.Configure)
+            {
+                FreezeBrushSettings();
+                ValidateLicenseStatus();
+            }
+            else if (State == State.Historical)
+            {
                 ValidateLicenseStatus();
             }
         }
@@ -375,6 +395,34 @@ namespace NinjaTrader.NinjaScript.Indicators
             }
         }
 
+        private static Brush FreezeBrush(Brush brush)
+        {
+            if (brush == null)
+                return null;
+
+            try
+            {
+                if (brush.CanFreeze && !brush.IsFrozen)
+                    brush.Freeze();
+            }
+            catch
+            {
+            }
+
+            return brush;
+        }
+
+        private void FreezeBrushSettings()
+        {
+            SmiBrush = FreezeBrush(SmiBrush);
+            SignalBrush = FreezeBrush(SignalBrush);
+            OverboughtLineBrush = FreezeBrush(OverboughtLineBrush);
+            OversoldLineBrush = FreezeBrush(OversoldLineBrush);
+            MiddleLineBrush = FreezeBrush(MiddleLineBrush);
+            OverboughtFillBrush = FreezeBrush(OverboughtFillBrush);
+            OversoldFillBrush = FreezeBrush(OversoldFillBrush);
+        }
+
         private static string BrushToString(Brush brush)
         {
             if (brush == null)
@@ -393,17 +441,17 @@ namespace NinjaTrader.NinjaScript.Indicators
         private static Brush StringToBrush(string value, Brush fallback)
         {
             if (string.IsNullOrWhiteSpace(value))
-                return fallback;
+                return FreezeBrush(fallback);
 
             try
             {
                 object converted = BrushConverter.ConvertFromString(null, CultureInfo.InvariantCulture, value);
                 Brush brush = converted as Brush;
-                return brush ?? fallback;
+                return FreezeBrush(brush ?? fallback);
             }
             catch
             {
-                return fallback;
+                return FreezeBrush(fallback);
             }
         }
 
@@ -471,6 +519,139 @@ namespace NinjaTrader.NinjaScript.Indicators
             }
         }
 
+        private string GetLicenseCacheKey(string normalizedLicenseKey, string machineId)
+        {
+            try
+            {
+                string rawCacheKey = ProductDisplayName + "|" + normalizedLicenseKey + "|" + machineId;
+
+                using (SHA256 sha = SHA256.Create())
+                {
+                    byte[] hashBytes = sha.ComputeHash(Encoding.UTF8.GetBytes(rawCacheKey));
+                    StringBuilder builder = new StringBuilder(hashBytes.Length * 2);
+
+                    foreach (byte hashByte in hashBytes)
+                        builder.Append(hashByte.ToString("x2", CultureInfo.InvariantCulture));
+
+                    return builder.ToString();
+                }
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private string GetLicenseCachePath(string normalizedLicenseKey, string machineId)
+        {
+            string cacheKey = GetLicenseCacheKey(normalizedLicenseKey, machineId);
+            if (string.IsNullOrWhiteSpace(cacheKey))
+                return string.Empty;
+
+            string cacheDirectory = GetLicenseCacheDirectory();
+            if (string.IsNullOrWhiteSpace(cacheDirectory))
+                return string.Empty;
+
+            return Path.Combine(cacheDirectory, "GGSMIPrecision-" + cacheKey + ".license");
+        }
+
+        private string GetLicenseCacheDirectory()
+        {
+            try
+            {
+                return Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "GoodGainsIndicators",
+                    "LicenseCache");
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private string GetSavedLicenseKeyPath()
+        {
+            string cacheDirectory = GetLicenseCacheDirectory();
+            return string.IsNullOrWhiteSpace(cacheDirectory)
+                ? string.Empty
+                : Path.Combine(cacheDirectory, SavedLicenseKeyFileName);
+        }
+
+        private string TryLoadSavedLicenseKey()
+        {
+            try
+            {
+                string savedLicenseKeyPath = GetSavedLicenseKeyPath();
+                if (string.IsNullOrWhiteSpace(savedLicenseKeyPath) || !File.Exists(savedLicenseKeyPath))
+                    return string.Empty;
+
+                return NormalizeLicenseKey(File.ReadAllText(savedLicenseKeyPath));
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private void SaveLastValidLicenseKey(string normalizedLicenseKey)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(normalizedLicenseKey))
+                    return;
+
+                string savedLicenseKeyPath = GetSavedLicenseKeyPath();
+                if (string.IsNullOrWhiteSpace(savedLicenseKeyPath))
+                    return;
+
+                string cacheDirectory = Path.GetDirectoryName(savedLicenseKeyPath);
+                if (!string.IsNullOrWhiteSpace(cacheDirectory))
+                    Directory.CreateDirectory(cacheDirectory);
+
+                File.WriteAllText(savedLicenseKeyPath, normalizedLicenseKey);
+            }
+            catch
+            {
+            }
+        }
+
+        private bool TryUseCachedLicense(string normalizedLicenseKey, string machineId)
+        {
+            try
+            {
+                string cachePath = GetLicenseCachePath(normalizedLicenseKey, machineId);
+                if (string.IsNullOrWhiteSpace(cachePath) || !File.Exists(cachePath))
+                    return false;
+
+                string cachedLicenseKey = File.ReadAllText(cachePath).Trim();
+                return string.Equals(cachedLicenseKey, normalizedLicenseKey, StringComparison.Ordinal);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private void SaveCachedLicense(string normalizedLicenseKey, string machineId)
+        {
+            try
+            {
+                string cachePath = GetLicenseCachePath(normalizedLicenseKey, machineId);
+                if (string.IsNullOrWhiteSpace(cachePath))
+                    return;
+
+                string cacheDirectory = Path.GetDirectoryName(cachePath);
+                if (!string.IsNullOrWhiteSpace(cacheDirectory))
+                    Directory.CreateDirectory(cacheDirectory);
+
+                File.WriteAllText(cachePath, normalizedLicenseKey);
+            }
+            catch
+            {
+            }
+        }
+
         private string ExtractResponseMessage(string responseText)
         {
             if (string.IsNullOrWhiteSpace(responseText))
@@ -521,17 +702,37 @@ namespace NinjaTrader.NinjaScript.Indicators
         private void ValidateLicenseStatus()
         {
             string normalizedLicenseKey = NormalizeLicenseKey(LicenseKey);
+            if (string.IsNullOrWhiteSpace(normalizedLicenseKey))
+            {
+                string savedLicenseKey = TryLoadSavedLicenseKey();
+                if (!string.IsNullOrWhiteSpace(savedLicenseKey))
+                {
+                    LicenseKey = savedLicenseKey;
+                    normalizedLicenseKey = savedLicenseKey;
+                }
+            }
+
             string machineId = GetMachineId();
 
-            if (licenseValidated &&
+            bool sameValidationRequest =
                 string.Equals(lastValidatedLicenseKey, normalizedLicenseKey, StringComparison.Ordinal) &&
                 string.Equals(lastValidatedMachineId, machineId, StringComparison.Ordinal) &&
-                lastValidatedUseLocalLicenseServer == UseLocalLicenseServer)
-                return;
+                lastValidatedUseLocalLicenseServer == UseLocalLicenseServer;
+
+            if (sameValidationRequest)
+            {
+                if (licenseValidated)
+                    return;
+
+                if (lastLicenseValidationAttemptUtc != DateTime.MinValue &&
+                    (DateTime.UtcNow - lastLicenseValidationAttemptUtc).TotalSeconds < LicenseRetryIntervalSeconds)
+                    return;
+            }
 
             lastValidatedLicenseKey = normalizedLicenseKey;
             lastValidatedMachineId = machineId;
             lastValidatedUseLocalLicenseServer = UseLocalLicenseServer;
+            lastLicenseValidationAttemptUtc = DateTime.UtcNow;
 
             if (string.IsNullOrWhiteSpace(normalizedLicenseKey))
             {
@@ -574,6 +775,12 @@ namespace NinjaTrader.NinjaScript.Indicators
                         responseText.IndexOf("\"valid\": true", StringComparison.OrdinalIgnoreCase) >= 0;
                     string responseMessage = ExtractResponseMessage(responseText);
 
+                    if (isValid)
+                    {
+                        SaveCachedLicense(normalizedLicenseKey, machineId);
+                        SaveLastValidLicenseKey(normalizedLicenseKey);
+                    }
+
                     SetLicenseState(
                         isValid,
                         isValid
@@ -584,7 +791,16 @@ namespace NinjaTrader.NinjaScript.Indicators
             catch (Exception ex)
             {
                 Print(ProductDisplayName + " license validation failed: " + ex.Message);
-                SetLicenseState(false, InvalidLicenseMessage);
+
+                if (TryUseCachedLicense(normalizedLicenseKey, machineId))
+                {
+                    SetLicenseState(true, string.Empty);
+                    return;
+                }
+
+                licenseValidated = false;
+                licenseIsValid = false;
+                licenseStatusMessage = InvalidLicenseMessage;
             }
         }
     }
@@ -599,7 +815,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 		private GGSmiPrecision[] cacheGGSmiPrecision;
 		public GGSmiPrecision GGSmiPrecision(int lengthK, int lengthD, int lengthEMA, double overbought, double oversold, bool showMiddleLine)
 		{
-			return GGSmiPrecision(Input, lengthK, lengthD, lengthEMA, overbought, oversold, showMiddleLine, string.Empty, true);
+			return GGSmiPrecision(Input, lengthK, lengthD, lengthEMA, overbought, oversold, showMiddleLine, string.Empty, false);
 		}
 
 		public GGSmiPrecision GGSmiPrecision(int lengthK, int lengthD, int lengthEMA, double overbought, double oversold, bool showMiddleLine, string licenseKey, bool useLocalLicenseServer)
@@ -609,7 +825,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 
 		public GGSmiPrecision GGSmiPrecision(ISeries<double> input, int lengthK, int lengthD, int lengthEMA, double overbought, double oversold, bool showMiddleLine)
 		{
-			return GGSmiPrecision(input, lengthK, lengthD, lengthEMA, overbought, oversold, showMiddleLine, string.Empty, true);
+			return GGSmiPrecision(input, lengthK, lengthD, lengthEMA, overbought, oversold, showMiddleLine, string.Empty, false);
 		}
 
 		public GGSmiPrecision GGSmiPrecision(ISeries<double> input, int lengthK, int lengthD, int lengthEMA, double overbought, double oversold, bool showMiddleLine, string licenseKey, bool useLocalLicenseServer)
@@ -629,7 +845,7 @@ namespace NinjaTrader.NinjaScript.MarketAnalyzerColumns
 	{
 		public Indicators.GGSmiPrecision GGSmiPrecision(int lengthK, int lengthD, int lengthEMA, double overbought, double oversold, bool showMiddleLine)
 		{
-			return indicator.GGSmiPrecision(Input, lengthK, lengthD, lengthEMA, overbought, oversold, showMiddleLine, string.Empty, true);
+			return indicator.GGSmiPrecision(Input, lengthK, lengthD, lengthEMA, overbought, oversold, showMiddleLine, string.Empty, false);
 		}
 
 		public Indicators.GGSmiPrecision GGSmiPrecision(int lengthK, int lengthD, int lengthEMA, double overbought, double oversold, bool showMiddleLine, string licenseKey, bool useLocalLicenseServer)
@@ -639,7 +855,7 @@ namespace NinjaTrader.NinjaScript.MarketAnalyzerColumns
 
 		public Indicators.GGSmiPrecision GGSmiPrecision(ISeries<double> input, int lengthK, int lengthD, int lengthEMA, double overbought, double oversold, bool showMiddleLine)
 		{
-			return indicator.GGSmiPrecision(input, lengthK, lengthD, lengthEMA, overbought, oversold, showMiddleLine, string.Empty, true);
+			return indicator.GGSmiPrecision(input, lengthK, lengthD, lengthEMA, overbought, oversold, showMiddleLine, string.Empty, false);
 		}
 
 		public Indicators.GGSmiPrecision GGSmiPrecision(ISeries<double> input, int lengthK, int lengthD, int lengthEMA, double overbought, double oversold, bool showMiddleLine, string licenseKey, bool useLocalLicenseServer)
@@ -655,7 +871,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 	{
 		public Indicators.GGSmiPrecision GGSmiPrecision(int lengthK, int lengthD, int lengthEMA, double overbought, double oversold, bool showMiddleLine)
 		{
-			return indicator.GGSmiPrecision(Input, lengthK, lengthD, lengthEMA, overbought, oversold, showMiddleLine, string.Empty, true);
+			return indicator.GGSmiPrecision(Input, lengthK, lengthD, lengthEMA, overbought, oversold, showMiddleLine, string.Empty, false);
 		}
 
 		public Indicators.GGSmiPrecision GGSmiPrecision(int lengthK, int lengthD, int lengthEMA, double overbought, double oversold, bool showMiddleLine, string licenseKey, bool useLocalLicenseServer)
@@ -665,7 +881,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
 		public Indicators.GGSmiPrecision GGSmiPrecision(ISeries<double> input, int lengthK, int lengthD, int lengthEMA, double overbought, double oversold, bool showMiddleLine)
 		{
-			return indicator.GGSmiPrecision(input, lengthK, lengthD, lengthEMA, overbought, oversold, showMiddleLine, string.Empty, true);
+			return indicator.GGSmiPrecision(input, lengthK, lengthD, lengthEMA, overbought, oversold, showMiddleLine, string.Empty, false);
 		}
 
 		public Indicators.GGSmiPrecision GGSmiPrecision(ISeries<double> input, int lengthK, int lengthD, int lengthEMA, double overbought, double oversold, bool showMiddleLine, string licenseKey, bool useLocalLicenseServer)
