@@ -1,7 +1,6 @@
 ﻿"use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 
 const projectTypes = [
   {
@@ -40,11 +39,53 @@ const projectTypes = [
 
 export function CustomDevelopmentQuote() {
   const [selected, setSelected] = useState<(typeof projectTypes)[number]["key"]>("strategy");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [projectIdea, setProjectIdea] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const activeProject = useMemo(() => projectTypes.find((item) => item.key === selected) ?? projectTypes[0], [selected]);
 
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitting(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await fetch("/api/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          topic: `Custom development - ${activeProject.label}`,
+          message: projectIdea
+        })
+      });
+
+      const data = (await response.json()) as {
+        success?: boolean;
+        message?: string;
+      };
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to send your quote request.");
+      }
+
+      setSuccess(data.message || "Your quote request has been sent.");
+      setProjectIdea("");
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Unable to send your quote request.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
-    <section className="space-y-10 rounded-[2rem] border border-white/10 bg-zinc-950/75 p-8 shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_0_24px_rgba(74,222,128,0.03)]">
+    <section className="relative z-10 space-y-10 rounded-[2rem] border border-white/10 bg-zinc-950/75 p-8 shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_0_24px_rgba(74,222,128,0.03)] pointer-events-auto">
       <div className="space-y-4">
         <p className="text-sm uppercase tracking-[0.24em] text-emerald-300">Project Intake</p>
         <h2 className="text-3xl font-semibold text-white">What do you want to build?</h2>
@@ -111,32 +152,61 @@ export function CustomDevelopmentQuote() {
           </div>
         </div>
 
-      <div className="rounded-[1.75rem] border border-white/10 bg-black/35 p-6">
+      <form onSubmit={handleSubmit} className="relative z-20 rounded-[1.75rem] border border-white/10 bg-black/35 p-6 pointer-events-auto">
         <p className="text-sm uppercase tracking-[0.22em] text-zinc-500">Step 3: Form</p>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
-          {["Name", "Email", "Project idea"].map((field, index) => (
-            <div
-              key={field}
-              className={`rounded-2xl border border-white/15 bg-zinc-950/70 px-4 py-5 text-base text-zinc-400 ${
-                index === 2 ? "md:col-span-2" : ""
-              }`}
-            >
-              {field}
-            </div>
-          ))}
+          <label className="relative z-20 rounded-2xl border border-white/15 bg-zinc-950/70 px-4 py-5 text-base text-zinc-400 pointer-events-auto">
+            <span className="mb-2 block text-xs uppercase tracking-[0.2em] text-zinc-500">Name</span>
+            <input
+              type="text"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              className="relative z-20 w-full bg-transparent text-base text-white outline-none placeholder:text-zinc-500 pointer-events-auto"
+              placeholder="Your name"
+              autoComplete="name"
+              required
+            />
+          </label>
+
+          <label className="relative z-20 rounded-2xl border border-white/15 bg-zinc-950/70 px-4 py-5 text-base text-zinc-400 pointer-events-auto">
+            <span className="mb-2 block text-xs uppercase tracking-[0.2em] text-zinc-500">Email</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              className="relative z-20 w-full bg-transparent text-base text-white outline-none placeholder:text-zinc-500 pointer-events-auto"
+              placeholder="you@example.com"
+              autoComplete="email"
+              required
+            />
+          </label>
+
+          <label className="relative z-20 rounded-2xl border border-white/15 bg-zinc-950/70 px-4 py-5 text-base text-zinc-400 md:col-span-2 pointer-events-auto">
+            <span className="mb-2 block text-xs uppercase tracking-[0.2em] text-zinc-500">Project idea</span>
+            <textarea
+              value={projectIdea}
+              onChange={(event) => setProjectIdea(event.target.value)}
+              className="relative z-20 min-h-28 w-full resize-y bg-transparent text-base leading-7 text-white outline-none placeholder:text-zinc-500 pointer-events-auto"
+              placeholder="Tell us what you want to build."
+              required
+            />
+          </label>
         </div>
+        {error ? <p className="mt-4 text-sm leading-7 text-rose-300">{error}</p> : null}
+        {success ? <p className="mt-4 text-sm leading-7 text-emerald-300">{success}</p> : null}
         <div className="mt-6">
-          <Link
-            href={`/support?service=${encodeURIComponent(activeProject.label)}#message-form`}
-            className="inline-flex items-center justify-center rounded-full border border-emerald-200/50 bg-emerald-300 px-8 py-4.5 text-lg font-semibold text-black shadow-[0_0_38px_rgba(74,222,128,0.38)] transition duration-200 hover:-translate-y-1 hover:bg-emerald-200 hover:shadow-[0_0_48px_rgba(74,222,128,0.48)]"
+          <button
+            type="submit"
+            disabled={submitting}
+            className="relative z-20 inline-flex items-center justify-center rounded-full border border-emerald-200/50 bg-emerald-300 px-8 py-4.5 text-lg font-semibold text-black shadow-[0_0_38px_rgba(74,222,128,0.38)] transition duration-200 hover:-translate-y-1 hover:bg-emerald-200 hover:shadow-[0_0_48px_rgba(74,222,128,0.48)] disabled:cursor-not-allowed disabled:opacity-70 pointer-events-auto"
           >
-            Get My Custom Quote
-          </Link>
+            {submitting ? "Sending..." : "Get My Custom Quote"}
+          </button>
           <p className="mt-4 text-base font-medium text-white">Start your custom build today</p>
           <p className="mt-2 text-sm font-medium text-zinc-200">Limited development slots available each month</p>
           <p className="mt-3 text-sm text-zinc-500">We usually respond within 24 hours</p>
         </div>
-      </div>
+      </form>
     </section>
   );
 }
