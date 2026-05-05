@@ -31,9 +31,9 @@ export const pageMetadata = {
       "Contact support for NinjaTrader 8 tools. Get help with installation, license activation, and product questions."
   },
   support: {
-    title: "NinjaTrader 8 Product Support | Good Gains Indicators",
+    title: "NinjaTrader 8 Support & Contact | Good Gains Indicators",
     description:
-      "Get NinjaTrader 8 product support for Good Gains tools, installation, activation, downloads, and troubleshooting."
+      "Contact support for NinjaTrader 8 tools. Get help with installation, license activation, and product questions."
   },
   products: {
     title: "NinjaTrader 8 Products | Good Gains Indicators",
