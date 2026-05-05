@@ -11,6 +11,9 @@ import {
   hasTemporaryUnlockAccess,
   hasDownloadAccess
 } from "@/lib/delivery";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata.secureDownloads;
 
 export default async function PrivateDownloadPage({
   params,

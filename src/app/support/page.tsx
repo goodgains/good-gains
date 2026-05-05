@@ -2,7 +2,10 @@ import { PageHero } from "@/components/PageHero";
 import { SupportContactForm } from "@/components/SupportContactForm";
 import { SupportMessagePanel } from "@/components/SupportMessagePanel";
 import { Container } from "@/components/ui/Container";
+import { pageMetadata } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
+
+export const metadata = pageMetadata.support;
 
 export default async function SupportPage({
   searchParams

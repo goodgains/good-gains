@@ -2,6 +2,9 @@ import { BundleCard } from "@/components/BundleCard";
 import { PageHero } from "@/components/PageHero";
 import { Container } from "@/components/ui/Container";
 import { products } from "@/lib/products";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata.bundle;
 
 export default function BundlePage() {
   return (

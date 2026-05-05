@@ -1,5 +1,8 @@
 import { LegalPage } from "@/components/LegalPage";
+import { pageMetadata } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
+
+export const metadata = pageMetadata.riskDisclaimer;
 
 export default function RiskDisclaimerPage() {
   return (

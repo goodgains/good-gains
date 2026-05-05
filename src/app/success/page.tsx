@@ -2,6 +2,9 @@ import Link from "next/link";
 import { bundle, bundleDeviceUpgrade } from "@/lib/products";
 import { PageHero } from "@/components/PageHero";
 import { Container } from "@/components/ui/Container";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata.success;
 
 export default async function SuccessPage({
   searchParams

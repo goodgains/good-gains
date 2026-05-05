@@ -3,6 +3,9 @@ import { BundleUpgradeCard } from "@/components/BundleUpgradeCard";
 import { RecoverLicenseForm } from "@/components/RecoverLicenseForm";
 import { PageHero } from "@/components/PageHero";
 import { Container } from "@/components/ui/Container";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata.recoverLicense;
 
 export default async function RecoverLicensePage({
   searchParams

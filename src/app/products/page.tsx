@@ -3,6 +3,9 @@ import { PageHero } from "@/components/PageHero";
 import { ProductCard } from "@/components/ProductCard";
 import { Container } from "@/components/ui/Container";
 import { products } from "@/lib/products";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata.products;
 
 export default function ProductsPage() {
   return (

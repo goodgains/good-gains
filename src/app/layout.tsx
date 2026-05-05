@@ -3,14 +3,14 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import { siteConfig } from "@/lib/site";
+import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: {
-    default: siteConfig.name,
-    template: `%s | ${siteConfig.name}`
+    default: pageMetadata.home.title as string,
+    template: "%s"
   },
-  description: siteConfig.description,
+  description: pageMetadata.home.description,
   icons: {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },

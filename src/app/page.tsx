@@ -6,6 +6,9 @@ import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { benefits, faqs, testimonials, whyChooseUs } from "@/lib/content";
 import { products } from "@/lib/products";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata.home;
 
 export default function HomePage() {
   const trustItems = [

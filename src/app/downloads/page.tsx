@@ -2,6 +2,9 @@
 import { PageHero } from "@/components/PageHero";
 import { Container } from "@/components/ui/Container";
 import { bundleDownload, getDownloadByProductName, getDownloadProducts } from "@/lib/downloads";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata.downloads;
 
 export default async function DownloadsPage({
   searchParams

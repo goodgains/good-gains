@@ -4,6 +4,9 @@ import { PageHero } from "@/components/PageHero";
 import { Container } from "@/components/ui/Container";
 import { getBaseUrl } from "@/lib/base-url";
 import { getPaddleClientToken, getPaddleEnvironment, isPaddleConfigured } from "@/lib/paddle";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata.paddleCheckout;
 
 export default async function PaddleCheckoutPage({
   searchParams

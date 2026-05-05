@@ -1,6 +1,9 @@
 import { CustomDevelopmentQuote } from "@/components/CustomDevelopmentQuote";
 import { PageHero } from "@/components/PageHero";
 import { Container } from "@/components/ui/Container";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata.customDevelopment;
 
 export default function CustomDevelopmentPage() {
   return (

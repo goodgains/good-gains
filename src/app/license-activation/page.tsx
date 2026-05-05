@@ -3,6 +3,9 @@ import { BundleUpgradeCard } from "@/components/BundleUpgradeCard";
 import { PageHero } from "@/components/PageHero";
 import { RecoverLicenseForm } from "@/components/RecoverLicenseForm";
 import { Container } from "@/components/ui/Container";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata.licenseActivation;
 
 const howItWorks = [
   "A unique license key",

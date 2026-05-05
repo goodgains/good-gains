@@ -4,6 +4,9 @@ import { DownloadAccessPolling } from "@/components/DownloadAccessPolling";
 import { PageHero } from "@/components/PageHero";
 import { Container } from "@/components/ui/Container";
 import { getValidatedDeliveryBySessionId } from "@/lib/delivery";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata.downloadAccess;
 
 export default async function DownloadAccessPage({
   searchParams

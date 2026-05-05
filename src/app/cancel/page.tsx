@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { PageHero } from "@/components/PageHero";
 import { Container } from "@/components/ui/Container";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata.cancel;
 
 export default function CancelPage() {
   return (

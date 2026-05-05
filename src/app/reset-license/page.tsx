@@ -2,6 +2,9 @@ import Link from "next/link";
 import { ResetLicenseForm } from "@/components/ResetLicenseForm";
 import { PageHero } from "@/components/PageHero";
 import { Container } from "@/components/ui/Container";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata.resetLicense;
 
 export default function ResetLicensePage() {
   return (

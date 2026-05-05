@@ -4,6 +4,9 @@ import { PaymentTrust } from "@/components/PaymentTrust";
 import { PageHero } from "@/components/PageHero";
 import { Container } from "@/components/ui/Container";
 import { bundle, getProductDeviceSavings, products } from "@/lib/products";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata.pricing;
 
 export default function PricingPage() {
   return (

@@ -1,6 +1,9 @@
 import { PageHero } from "@/components/PageHero";
 import { Container } from "@/components/ui/Container";
 import { faqs } from "@/lib/content";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata.faq;
 
 export default function FAQPage() {
   return (
