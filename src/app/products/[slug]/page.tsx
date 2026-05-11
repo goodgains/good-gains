@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ProductDetail } from "@/components/ProductDetail";
-import { bundle, getProductBySlug, isBundleSlug, products } from "@/lib/products";
+import { bundle, getCanonicalProductSlug, getProductBySlug, isBundleSlug, products } from "@/lib/products";
 import { pageMetadata, productPageMetadata } from "@/lib/seo";
 
 export function generateStaticParams() {
-  return [...products.map((product) => ({ slug: product.slug })), { slug: bundle.slug }];
+  return [...products.map((product) => ({ slug: getCanonicalProductSlug(product) })), { slug: bundle.slug }];
 }
 
 export async function generateMetadata({

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
-import { getBaseUrl } from "@/lib/base-url";
-import { bundle, products } from "@/lib/products";
+import { bundle, getProductPath, products } from "@/lib/products";
+import { CANONICAL_SITE_URL } from "@/lib/seo";
 
 type SitemapEntry = {
   path: string;
@@ -20,18 +20,17 @@ const staticPages: SitemapEntry[] = [
   { path: "/contact", priority: 0.7, changeFrequency: "monthly" },
   { path: "/support", priority: 0.7, changeFrequency: "monthly" },
   { path: "/faq", priority: 0.65, changeFrequency: "monthly" },
-  { path: "/terms-of-service", priority: 0.45, changeFrequency: "yearly" },
+  { path: "/terms", priority: 0.45, changeFrequency: "yearly" },
   { path: "/privacy-policy", priority: 0.45, changeFrequency: "yearly" },
   { path: "/refund-policy", priority: 0.45, changeFrequency: "yearly" },
   { path: "/risk-disclaimer", priority: 0.4, changeFrequency: "yearly" }
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = getBaseUrl();
   const lastModified = new Date();
 
   const productPages: SitemapEntry[] = products.map((product) => ({
-    path: `/products/${product.slug}`,
+    path: getProductPath(product),
     priority: 0.9,
     changeFrequency: "weekly"
   }));
@@ -43,7 +42,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   };
 
   return [...staticPages, ...productPages, bundleAliasPage].map((entry) => ({
-    url: `${baseUrl}${entry.path}`,
+    url: `${CANONICAL_SITE_URL}${entry.path}`,
     lastModified,
     changeFrequency: entry.changeFrequency,
     priority: entry.priority

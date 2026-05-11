@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PaymentTrust } from "@/components/PaymentTrust";
 import { PageHero } from "@/components/PageHero";
 import { Container } from "@/components/ui/Container";
-import { bundle, getProductDeviceSavings, products } from "@/lib/products";
+import { bundle, getProductDeviceSavings, getProductPath, products } from "@/lib/products";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata.pricing;
@@ -67,7 +67,7 @@ export default function PricingPage() {
                 </div>
                 <div className="mt-6">
                   <Link
-                    href={`/products/${product.slug}` as Route}
+                    href={getProductPath(product) as Route}
                     className="inline-flex w-full items-center justify-center rounded-full border border-emerald-200/50 bg-emerald-300 px-6 py-4 text-base font-semibold text-black shadow-[0_0_30px_rgba(74,222,128,0.32)] transition hover:-translate-y-0.5 hover:bg-emerald-200 hover:shadow-[0_0_40px_rgba(74,222,128,0.42)]"
                   >
                     View Product

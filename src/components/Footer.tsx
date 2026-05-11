@@ -2,10 +2,11 @@
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 import { Container } from "@/components/ui/Container";
+import { getProductPath, products } from "@/lib/products";
 import { siteConfig } from "@/lib/site";
 
 const legalLinks: { href: Route; label: string }[] = [
-  { href: "/terms-of-service", label: "Terms of Service" },
+  { href: "/terms", label: "Terms of Service" },
   { href: "/privacy-policy", label: "Privacy Policy" },
   { href: "/refund-policy", label: "Refund Policy" },
   { href: "/risk-disclaimer", label: "Risk Disclaimer" },
@@ -32,6 +33,11 @@ export function Footer() {
               <Link href="/products">Indicators</Link>
               <Link href="/pricing">Pricing</Link>
               <Link href="/bundle">Bundle Offer</Link>
+              {products.map((product) => (
+                <Link key={product.slug} href={getProductPath(product) as Route}>
+                  {product.name}
+                </Link>
+              ))}
               <Link href="/downloads">Downloads</Link>
               <Link href="/custom-development">Custom Development</Link>
               <Link href="/contact">Contact</Link>

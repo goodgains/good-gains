@@ -288,8 +288,30 @@ export const bundle = {
   ]
 } as const satisfies BundleViewer;
 
+export const productCanonicalSlugs: Record<string, string> = {
+  "gg-rr-trade-panel": "gg-rr-trade-panel",
+  "daily-account-lock-addon": "gg-daily-account-lock",
+  "session-high-low-indicator": "gg-session-high-low",
+  "gg-stochastic-momentum-index": "gg-stochastic-momentum-index"
+};
+
+export const productSlugAliases: Record<string, string> = {
+  "gg-daily-account-lock": "daily-account-lock-addon",
+  "gg-session-high-low": "session-high-low-indicator"
+};
+
+export function getCanonicalProductSlug(product: Product) {
+  return productCanonicalSlugs[product.slug] ?? product.slug;
+}
+
+export function getProductPath(product: Product) {
+  return `/products/${getCanonicalProductSlug(product)}`;
+}
+
 export function getProductBySlug(slug: string) {
-  return products.find((product) => product.slug === slug);
+  const productSlug = productSlugAliases[slug] ?? slug;
+
+  return products.find((product) => product.slug === productSlug);
 }
 
 export function isBundleSlug(slug: string) {

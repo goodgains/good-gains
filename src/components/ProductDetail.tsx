@@ -5,7 +5,7 @@ import { PaymentTrust } from "@/components/PaymentTrust";
 import { ProductMediaShowcase } from "@/components/ProductMediaShowcase";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
-import { bundle, BundleViewer, getProductDeviceSavings, Product, products } from "@/lib/products";
+import { bundle, BundleViewer, getProductDeviceSavings, getProductPath, Product, products } from "@/lib/products";
 
 type ProductDetailProps =
   | {
@@ -122,7 +122,7 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
 
   const navigationItems = [
     ...products.map((item) => ({
-      href: `/products/${item.slug}` as Route,
+      href: getProductPath(item) as Route,
       key: item.slug,
       title: item.name,
       description: item.shortDescription,
@@ -427,13 +427,17 @@ export function ProductDetail({ product, bundleView }: ProductDetailProps) {
                   </div>
                   <div className="grid gap-3">
                     {products.map((item) => (
-                      <div key={item.slug} className="rounded-2xl border border-white/10 bg-black/40 px-4 py-4">
+                      <Link
+                        key={item.slug}
+                        href={getProductPath(item) as Route}
+                        className="rounded-2xl border border-white/10 bg-black/40 px-4 py-4 transition hover:border-white/15 hover:bg-black/50"
+                      >
                         <div className="flex items-center justify-between gap-4">
                           <p className="text-sm font-semibold text-white">{item.name}</p>
                           <p className="text-sm font-semibold text-emerald-200">${item.price}</p>
                         </div>
                         <p className="mt-1 text-sm text-zinc-400">{item.shortDescription}</p>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 </div>

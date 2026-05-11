@@ -1,7 +1,9 @@
+import type { Route } from "next";
+import Link from "next/link";
 import { BundleCard } from "@/components/BundleCard";
 import { PageHero } from "@/components/PageHero";
 import { Container } from "@/components/ui/Container";
-import { products } from "@/lib/products";
+import { getProductPath, products } from "@/lib/products";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata.bundle;
@@ -21,7 +23,11 @@ export default function BundlePage() {
           <div className="grid gap-6 lg:grid-cols-2">
             {products.map((product) => (
               <article key={product.slug} className="rounded-[2rem] border border-white/10 bg-zinc-950/70 p-6">
-                <h2 className="text-2xl font-semibold text-white">{product.name}</h2>
+                <h2 className="text-2xl font-semibold text-white">
+                  <Link href={getProductPath(product) as Route} className="transition hover:text-emerald-200">
+                    {product.name}
+                  </Link>
+                </h2>
                 <p className="mt-3 text-sm leading-7 text-zinc-400">{product.shortDescription}</p>
                 <p className="mt-3 text-base font-semibold text-white">{product.benefitLine}</p>
                 <ul className="mt-5 space-y-3 text-sm text-zinc-300">
@@ -32,6 +38,12 @@ export default function BundlePage() {
                     </li>
                   ))}
                 </ul>
+                <Link
+                  href={getProductPath(product) as Route}
+                  className="mt-5 inline-flex text-sm font-semibold text-emerald-200 transition hover:text-emerald-100"
+                >
+                  View {product.name}
+                </Link>
               </article>
             ))}
           </div>

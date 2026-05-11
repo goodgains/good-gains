@@ -3,9 +3,10 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import { pageMetadata } from "@/lib/seo";
+import { CANONICAL_SITE_URL, pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(CANONICAL_SITE_URL),
   title: {
     default: pageMetadata.home.title as string,
     template: "%s"
