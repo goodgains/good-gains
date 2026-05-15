@@ -5,8 +5,11 @@ const CANONICAL_ORIGIN = `https://${CANONICAL_HOST}`;
 
 const canonicalPathRedirects: Record<string, string> = {
   "/terms-of-service": "/terms",
+  "/terms-of-service/": "/terms",
   "/products/daily-account-lock-addon": "/products/gg-daily-account-lock",
-  "/products/session-high-low-indicator": "/products/gg-session-high-low"
+  "/products/daily-account-lock-addon/": "/products/gg-daily-account-lock",
+  "/products/session-high-low-indicator": "/products/gg-session-high-low",
+  "/products/session-high-low-indicator/": "/products/gg-session-high-low"
 };
 
 function permanentRedirect(url: URL) {

@@ -4,7 +4,7 @@ export const CANONICAL_SITE_URL = "https://goodgainsindicators.com";
 
 function createMetadata(title: string, description: string, path = "/"): Metadata {
   const canonicalPath = path.startsWith("/") ? path : `/${path}`;
-  const canonicalUrl = `${CANONICAL_SITE_URL}${canonicalPath === "/" ? "" : canonicalPath}`;
+  const canonicalUrl = `${CANONICAL_SITE_URL}${canonicalPath}`;
 
   return {
     title,

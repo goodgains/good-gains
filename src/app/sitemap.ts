@@ -42,7 +42,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   };
 
   return [...staticPages, ...productPages, bundleAliasPage].map((entry) => ({
-    url: `${CANONICAL_SITE_URL}${entry.path}`,
+    url: entry.path === "/" ? CANONICAL_SITE_URL : `${CANONICAL_SITE_URL}${entry.path}`,
     lastModified,
     changeFrequency: entry.changeFrequency,
     priority: entry.priority
